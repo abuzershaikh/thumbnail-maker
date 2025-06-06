@@ -6,14 +6,15 @@ import { ElementsSidebar } from '@/components/thumbnail-maker/elements-sidebar';
 import { CanvasArea } from '@/components/thumbnail-maker/canvas-area';
 import { PropertiesSidebar } from '@/components/thumbnail-maker/properties-sidebar';
 import { Youtube } from 'lucide-react';
-import type { CanvasElement, ElementType, TextElement, ImageElement } from '@/types/canvas';
+import type { CanvasElement, ElementType, TextElement, ImageElement, ShapeElement, ShapeType } from '@/types/canvas';
 
 export default function ThumbnailMakerLayout() {
   const [elements, setElements] = useState<CanvasElement[]>([]);
   const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
-  const [canvasBackgroundColor, setCanvasBackgroundColor] = useState<string>('#FFFFFF'); // Default white
+  const [canvasBackgroundColor, setCanvasBackgroundColor] = useState<string>('#FFFFFF');
+  const [canvasBackgroundImage, setCanvasBackgroundImage] = useState<string | null>(null);
 
-  const addElement = useCallback((type: ElementType) => {
+  const addElement = useCallback((type: ElementType, shapeType?: ShapeType) => {
     const newId = crypto.randomUUID();
     let newElement: CanvasElement;
 
@@ -21,8 +22,8 @@ export default function ThumbnailMakerLayout() {
       id: newId,
       x: 10,
       y: 10,
-      width: type === 'text' ? 30 : 40, // %
-      height: type === 'text' ? 10 : 30, // %
+      width: type === 'text' ? 30 : (type === 'shape' ? 20 : 40),
+      height: type === 'text' ? 10 : (type === 'shape' ? 20 : 30),
       rotation: 0,
     };
 
@@ -31,15 +32,15 @@ export default function ThumbnailMakerLayout() {
         ...defaultProps,
         type: 'text',
         content: 'New Text',
-        fontSize: 24, // px
+        fontSize: 24,
         fontFamily: 'PT Sans',
         color: '#333333',
         textAlign: 'left',
         fontWeight: 'normal',
         fontStyle: 'normal',
         textDecoration: 'none',
-        letterSpacing: 0, // px
-        lineHeight: 1.2, // unitless multiplier,
+        letterSpacing: 0,
+        lineHeight: 1.2,
       } as TextElement;
     } else if (type === 'image') {
       newElement = {
@@ -55,10 +56,21 @@ export default function ThumbnailMakerLayout() {
         shadowOffsetY: 0,
         shadowBlur: 0,
         shadowSpreadRadius: 0,
-        shadowColor: '#000000',
+        shadowColor: '#00000000', // Transparent default shadow
         'data-ai-hint': 'abstract background',
       } as ImageElement;
-    } else {
+    } else if (type === 'shape' && shapeType === 'rectangle') {
+      newElement = {
+        ...defaultProps,
+        type: 'shape',
+        shapeType: 'rectangle',
+        fillColor: '#CCCCCC',
+        strokeColor: '#333333',
+        strokeWidth: 1,
+        cornerRadius: 0,
+      } as ShapeElement;
+    }
+     else {
       return;
     }
 
@@ -86,7 +98,7 @@ export default function ThumbnailMakerLayout() {
       shadowOffsetY: 0,
       shadowBlur: 0,
       shadowSpreadRadius: 0,
-      shadowColor: '#000000',
+      shadowColor: '#00000000',
     };
     setElements((prevElements) => [...prevElements, newElement]);
     setSelectedElementId(newId);
@@ -111,6 +123,44 @@ export default function ThumbnailMakerLayout() {
     setSelectedElementId(id);
   }, []);
 
+  const bringForward = useCallback((id: string) => {
+    setElements(prevElements => {
+      const index = prevElements.findIndex(el => el.id === id);
+      if (index === -1 || index === prevElements.length - 1) return prevElements;
+      const newElements = [...prevElements];
+      [newElements[index], newElements[index + 1]] = [newElements[index + 1], newElements[index]];
+      return newElements;
+    });
+  }, []);
+
+  const sendBackward = useCallback((id: string) => {
+    setElements(prevElements => {
+      const index = prevElements.findIndex(el => el.id === id);
+      if (index === -1 || index === 0) return prevElements;
+      const newElements = [...prevElements];
+      [newElements[index], newElements[index - 1]] = [newElements[index - 1], newElements[index]];
+      return newElements;
+    });
+  }, []);
+
+  const bringToFront = useCallback((id: string) => {
+    setElements(prevElements => {
+      const element = prevElements.find(el => el.id === id);
+      if (!element) return prevElements;
+      const newElements = prevElements.filter(el => el.id !== id);
+      return [...newElements, element];
+    });
+  }, []);
+
+  const sendToBack = useCallback((id: string) => {
+    setElements(prevElements => {
+      const element = prevElements.find(el => el.id === id);
+      if (!element) return prevElements;
+      const newElements = prevElements.filter(el => el.id !== id);
+      return [element, ...newElements];
+    });
+  }, []);
+
   const selectedElement = elements.find((el) => el.id === selectedElementId) || null;
 
   return (
@@ -127,6 +177,8 @@ export default function ThumbnailMakerLayout() {
           onImageUpload={handleImageUpload}
           setCanvasBackgroundColor={setCanvasBackgroundColor}
           canvasBackgroundColor={canvasBackgroundColor}
+          setCanvasBackgroundImage={setCanvasBackgroundImage}
+          canvasBackgroundImage={canvasBackgroundImage}
         />
         <CanvasArea
           elements={elements}
@@ -134,6 +186,7 @@ export default function ThumbnailMakerLayout() {
           selectElement={selectElement}
           updateElement={updateElement}
           canvasBackgroundColor={canvasBackgroundColor}
+          canvasBackgroundImage={canvasBackgroundImage}
         />
         <PropertiesSidebar
           elements={elements}
@@ -141,9 +194,12 @@ export default function ThumbnailMakerLayout() {
           updateElement={updateElement}
           deleteElement={deleteElement}
           selectElement={selectElement}
+          bringForward={bringForward}
+          sendBackward={sendBackward}
+          bringToFront={bringToFront}
+          sendToBack={sendToBack}
         />
       </main>
     </div>
   );
 }
-

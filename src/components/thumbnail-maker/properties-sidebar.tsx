@@ -10,8 +10,12 @@ import { Slider } from '@/components/ui/slider';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { LayersIcon, PaletteIcon, TypeIcon, ImagePlayIcon, Settings2Icon, RotateCcwIcon, Trash2Icon, CaseSensitiveIcon,PilcrowIcon, CombineIcon, UnderlineIcon, StrikethroughIcon, BoldIcon, ItalicIcon, Square, Palette, Copy as CopyIcon, ArrowLeftRight, ArrowUpDown, VenetianMask, ScanEye, Maximize2, Minus } from 'lucide-react';
-import type { CanvasElement, TextElement, ImageElement } from '@/types/canvas';
+import { 
+    LayersIcon, PaletteIcon, TypeIcon, ImagePlayIcon, Settings2Icon, RotateCcwIcon, Trash2Icon, 
+    CaseSensitiveIcon, PilcrowIcon, CombineIcon, UnderlineIcon, StrikethroughIcon, BoldIcon, 
+    ItalicIcon, Square as SquareIconLucide, Palette, Copy as CopyIcon, ChevronsUp, ChevronUp, ChevronDown, ChevronsDown, ShapesIcon
+} from 'lucide-react';
+import type { CanvasElement, TextElement, ImageElement, ShapeElement } from '@/types/canvas';
 
 interface PropertiesSidebarProps {
   elements: CanvasElement[];
@@ -19,9 +23,12 @@ interface PropertiesSidebarProps {
   updateElement: (id: string, updates: Partial<CanvasElement>) => void;
   deleteElement: (id: string) => void;
   selectElement: (id: string | null) => void;
+  bringForward: (id: string) => void;
+  sendBackward: (id: string) => void;
+  bringToFront: (id: string) => void;
+  sendToBack: (id: string) => void;
 }
 
-// A simple CornerRadiusIcon as lucide-react might not have a direct one
 const CustomCornerRadiusIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -40,11 +47,14 @@ const CustomCornerRadiusIcon = (props: React.SVGProps<SVGSVGElement>) => (
 );
 
 
-export function PropertiesSidebar({ elements, selectedElement, updateElement, deleteElement, selectElement }: PropertiesSidebarProps) {
+export function PropertiesSidebar({ 
+    elements, selectedElement, updateElement, deleteElement, selectElement,
+    bringForward, sendBackward, bringToFront, sendToBack
+}: PropertiesSidebarProps) {
 
-  const handleInputChange = (property: keyof CanvasElement | keyof TextElement | keyof ImageElement, value: any) => {
+  const handleInputChange = (property: keyof CanvasElement | keyof TextElement | keyof ImageElement | keyof ShapeElement, value: any) => {
     if (selectedElement) {
-        if (typeof value === 'string' && (property === 'letterSpacing' || property === 'lineHeight' || property === 'borderRadius' || property === 'borderWidth' || property === 'shadowOffsetX' || property === 'shadowOffsetY' || property === 'shadowBlur' || property === 'shadowSpreadRadius')) {
+        if (typeof value === 'string' && (property === 'letterSpacing' || property === 'lineHeight' || property === 'borderRadius' || property === 'borderWidth' || property === 'shadowOffsetX' || property === 'shadowOffsetY' || property === 'shadowBlur' || property === 'shadowSpreadRadius' || property === 'strokeWidth' || property === 'cornerRadius')) {
             const numValue = parseFloat(value);
             updateElement(selectedElement.id, { [property]: isNaN(numValue) ? 0 : numValue });
         } else {
@@ -53,7 +63,7 @@ export function PropertiesSidebar({ elements, selectedElement, updateElement, de
     }
   };
 
-  const handleSliderChange = (property: keyof CanvasElement | keyof TextElement | keyof ImageElement, value: number[]) => {
+  const handleSliderChange = (property: keyof CanvasElement | keyof TextElement | keyof ImageElement | keyof ShapeElement, value: number[]) => {
     if (selectedElement) {
       updateElement(selectedElement.id, { [property]: value[0] });
     }
@@ -66,7 +76,11 @@ export function PropertiesSidebar({ elements, selectedElement, updateElement, de
     if (element.type === 'image') {
       const src = (element as ImageElement).src;
       if (src.startsWith('data:')) return 'Image: Uploaded';
+      if ((element as ImageElement)['data-ai-hint']) return `Image: ${(element as ImageElement)['data-ai-hint']}`;
       return `Image: ${src.substring(src.lastIndexOf('/') + 1).substring(0,20)}...`;
+    }
+    if (element.type === 'shape') {
+        return `Shape: ${(element as ShapeElement).shapeType}`;
     }
     return `Element: ${element.id.substring(0, 8)}`;
   };
@@ -273,7 +287,7 @@ export function PropertiesSidebar({ elements, selectedElement, updateElement, de
       </div>
 
       <div className="pt-2 space-y-1">
-        <h5 className="text-xs font-medium flex items-center gap-1 mb-1"><Square className="h-3 w-3 text-muted-foreground" /> Border</h5>
+        <h5 className="text-xs font-medium flex items-center gap-1 mb-1"><SquareIconLucide className="h-3 w-3 text-muted-foreground" /> Border</h5>
         <Label htmlFor="border-width" className="text-xs">Width (px)</Label>
         <Input id="border-width" type="number" value={element.borderWidth || 0} onChange={(e) => handleInputChange('borderWidth', e.target.value)} className="h-8 text-xs" min="0" />
         <Slider value={[element.borderWidth || 0]} max={50} step={1} onValueChange={(value) => handleSliderChange('borderWidth', value)} className="mt-1" />
@@ -302,10 +316,10 @@ export function PropertiesSidebar({ elements, selectedElement, updateElement, de
 
         <Label htmlFor="shadow-spread" className="text-xs mt-2">Spread (px)</Label>
         <Input id="shadow-spread" type="number" value={element.shadowSpreadRadius || 0} onChange={(e) => handleInputChange('shadowSpreadRadius', e.target.value)} className="h-8 text-xs" />
-        <Slider value={[element.shadowSpreadRadius || 0]} min={0} max={50} step={1} onValueChange={(value) => handleSliderChange('shadowSpreadRadius', value)} className="mt-1" />
+        <Slider value={[element.shadowSpreadRadius || 0]} min={-50} max={50} step={1} onValueChange={(value) => handleSliderChange('shadowSpreadRadius', value)} className="mt-1" />
 
         <Label htmlFor="shadow-color" className="text-xs mt-2 flex items-center gap-1"><Palette className="h-3 w-3 text-muted-foreground" />Color</Label>
-        <Input id="shadow-color" type="color" value={element.shadowColor || '#000000'} onChange={(e) => handleInputChange('shadowColor', e.target.value)} className="h-8 p-1" />
+        <Input id="shadow-color" type="color" value={element.shadowColor || '#00000000'} onChange={(e) => handleInputChange('shadowColor', e.target.value)} className="h-8 p-1" />
       </div>
       
       <div className="pt-2 space-y-1">
@@ -330,6 +344,54 @@ export function PropertiesSidebar({ elements, selectedElement, updateElement, de
       </div>
     </div>
   );
+
+  const renderShapeProperties = (element: ShapeElement) => (
+    <div className="space-y-3 p-3 border rounded-md bg-muted/20">
+      <h4 className="font-medium text-sm flex items-center gap-2"><ShapesIcon className="h-4 w-4" /> Shape Properties ({element.shapeType})</h4>
+       <div className="space-y-1">
+        <Label htmlFor="shape-fill-color" className="text-xs flex items-center gap-1"><Palette className="h-3 w-3 text-muted-foreground" />Fill Color</Label>
+        <Input
+          id="shape-fill-color"
+          type="color"
+          value={element.fillColor}
+          onChange={(e) => handleInputChange('fillColor', e.target.value)}
+          className="h-8 p-1"
+        />
+      </div>
+      <div className="pt-2 space-y-1">
+        <h5 className="text-xs font-medium flex items-center gap-1 mb-1"><SquareIconLucide className="h-3 w-3 text-muted-foreground" /> Stroke</h5>
+        <Label htmlFor="shape-stroke-width" className="text-xs">Width (px)</Label>
+        <Input id="shape-stroke-width" type="number" value={element.strokeWidth || 0} onChange={(e) => handleInputChange('strokeWidth', e.target.value)} className="h-8 text-xs" min="0" />
+        <Slider value={[element.strokeWidth || 0]} max={50} step={1} onValueChange={(value) => handleSliderChange('strokeWidth', value)} className="mt-1" />
+        
+        <Label htmlFor="shape-stroke-color" className="text-xs mt-2 flex items-center gap-1"><Palette className="h-3 w-3 text-muted-foreground" />Color</Label>
+        <Input id="shape-stroke-color" type="color" value={element.strokeColor || '#000000'} onChange={(e) => handleInputChange('strokeColor', e.target.value)} className="h-8 p-1" />
+      </div>
+      {element.shapeType === 'rectangle' && (
+        <div className="pt-2 space-y-1">
+          <Label htmlFor="shape-border-radius" className="text-xs flex items-center gap-1">
+            <CustomCornerRadiusIcon className="h-3 w-3" />Corner Radius (px)
+          </Label>
+          <Input
+            id="shape-border-radius"
+            type="number"
+            value={element.cornerRadius || 0}
+            onChange={(e) => handleInputChange('cornerRadius', parseInt(e.target.value, 10) || 0)}
+            className="h-8 text-xs"
+            min="0"
+          />
+          <Slider
+            value={[element.cornerRadius || 0]}
+            max={100} 
+            step={1}
+            onValueChange={(value) => handleSliderChange('cornerRadius', value)}
+            className="mt-1"
+          />
+        </div>
+      )}
+    </div>
+  );
+
 
   const renderCommonProperties = (element: CanvasElement) => (
     <div className="space-y-3 p-3 border rounded-md bg-muted/20">
@@ -377,6 +439,10 @@ export function PropertiesSidebar({ elements, selectedElement, updateElement, de
     </div>
   );
 
+  const reversedElements = elements.slice().reverse();
+  const selectedElementIndexInReversed = selectedElement ? reversedElements.findIndex(el => el.id === selectedElement.id) : -1;
+  const totalElements = elements.length;
+
   return (
     <Card className="w-72 border-l-0 border-t-0 border-b-0 rounded-none shadow-none flex flex-col">
       <CardHeader className="pb-3 pt-4 border-b">
@@ -390,6 +456,7 @@ export function PropertiesSidebar({ elements, selectedElement, updateElement, de
           {selectedElement && renderCommonProperties(selectedElement)}
           {selectedElement?.type === 'text' && renderTextProperties(selectedElement as TextElement)}
           {selectedElement?.type === 'image' && renderImageProperties(selectedElement as ImageElement)}
+          {selectedElement?.type === 'shape' && renderShapeProperties(selectedElement as ShapeElement)}
         </CardContent>
       </ScrollArea>
        <CardHeader className="pb-3 pt-4 border-b border-t">
@@ -400,20 +467,32 @@ export function PropertiesSidebar({ elements, selectedElement, updateElement, de
       <ScrollArea className="flex-[0.5_1_auto] min-h-[150px]"> 
         <CardContent className="p-4">
           {elements.length === 0 && <p className="text-sm text-muted-foreground text-center">No layers yet.</p>}
-          <div className="space-y-2">
-            {elements.slice().reverse().map((element) => (
+          <div className="space-y-1">
+            {reversedElements.map((element, index) => (
               <div
                 key={element.id}
                 className={`p-2 border rounded-md text-xs flex items-center justify-between cursor-pointer transition-colors
                             ${selectedElement?.id === element.id ? 'bg-primary/20 border-primary' : 'bg-card hover:bg-muted/50'}`}
                 onClick={() => selectElement(element.id)}
               >
-                <span className="truncate flex-1" title={getLayerName(element)}>{getLayerName(element)}</span>
-                <div className="flex items-center gap-1 pl-2">
+                <span className="truncate flex-1 mr-1" title={getLayerName(element)}>{getLayerName(element)}</span>
+                <div className="flex items-center">
+                  <Button variant="ghost" size="icon" className="h-5 w-5" onClick={(e) => { e.stopPropagation(); bringToFront(element.id); }} title="Bring to Front" disabled={index === 0}>
+                    <ChevronsUp className="h-3 w-3" />
+                  </Button>
+                  <Button variant="ghost" size="icon" className="h-5 w-5" onClick={(e) => { e.stopPropagation(); bringForward(element.id); }} title="Bring Forward" disabled={index === 0}>
+                    <ChevronUp className="h-3 w-3" />
+                  </Button>
+                  <Button variant="ghost" size="icon" className="h-5 w-5" onClick={(e) => { e.stopPropagation(); sendBackward(element.id); }} title="Send Backward" disabled={index === totalElements - 1}>
+                    <ChevronDown className="h-3 w-3" />
+                  </Button>
+                  <Button variant="ghost" size="icon" className="h-5 w-5" onClick={(e) => { e.stopPropagation(); sendToBack(element.id); }} title="Send to Back" disabled={index === totalElements - 1}>
+                    <ChevronsDown className="h-3 w-3" />
+                  </Button>
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-6 w-6 hover:bg-destructive/20 hover:text-destructive"
+                    className="h-5 w-5 hover:bg-destructive/20 hover:text-destructive ml-1"
                     onClick={(e) => { e.stopPropagation(); deleteElement(element.id); }}
                     title={`Delete ${element.type}`}
                   >
@@ -428,4 +507,3 @@ export function PropertiesSidebar({ elements, selectedElement, updateElement, de
     </Card>
   );
 }
-

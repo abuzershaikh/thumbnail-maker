@@ -1,5 +1,6 @@
 
-export type ElementType = 'text' | 'image';
+export type ElementType = 'text' | 'image' | 'shape';
+export type ShapeType = 'rectangle'; // Future: 'circle', 'triangle', etc.
 
 export interface BaseElement {
   id: string;
@@ -38,7 +39,16 @@ export interface ImageElement extends BaseElement {
   shadowBlur?: number; // in px
   shadowSpreadRadius?: number; // in px
   shadowColor?: string; // color hex
+  'data-ai-hint'?: string;
 }
 
-export type CanvasElement = TextElement | ImageElement;
+export interface ShapeElement extends BaseElement {
+  type: 'shape';
+  shapeType: ShapeType;
+  fillColor: string;
+  strokeColor: string;
+  strokeWidth: number;
+  cornerRadius?: number; // For rounded rectangles
+}
 
+export type CanvasElement = TextElement | ImageElement | ShapeElement;
