@@ -50,16 +50,13 @@ export default function ThumbnailMakerLayout() {
     let posX = options?.x ?? 10;
     let posY = options?.y ?? 10;
 
-    if (options?.x !== undefined && options?.width !== undefined) {
-      posX = Math.max(0, Math.min(posX, 100 - options.width));
-    } else if (options?.x !== undefined) {
-       posX = Math.max(0, Math.min(posX, 100 - elementWidth));
+    // Ensure the element is placed within bounds if x, y are provided
+    // Adjust position based on element size if options.x/y would place part of it out of bounds
+    if (options?.x !== undefined) {
+        posX = Math.max(0, Math.min(options.x, 100 - elementWidth));
     }
-
-    if (options?.y !== undefined && options?.height !== undefined) {
-      posY = Math.max(0, Math.min(posY, 100 - options.height));
-    } else if (options?.y !== undefined) {
-        posY = Math.max(0, Math.min(posY, 100 - elementHeight));
+    if (options?.y !== undefined) {
+        posY = Math.max(0, Math.min(options.y, 100 - elementHeight));
     }
 
 
@@ -79,7 +76,7 @@ export default function ThumbnailMakerLayout() {
       newElement = {
         type: 'text',
         content: 'New Text',
-        fontSize: options?.initialProps?.fontSize || 24,
+        fontSize: (options?.initialProps as TextElement)?.fontSize || 24,
         fontFamily: 'PT Sans',
         color: '#333333',
         textAlign: 'left',
@@ -92,8 +89,8 @@ export default function ThumbnailMakerLayout() {
         shadowOffsetY: 0,
         shadowBlur: 0,
         shadowColor: '#00000000',
-        ...baseProps, // Spread baseProps to ensure ID, position, dimensions, rotation are set
-        ...options?.initialProps, // Spread initialProps again to override any text-specific defaults if needed
+        ...baseProps, 
+        ...options?.initialProps, 
       } as TextElement;
     } else if (type === 'image') {
       newElement = {
@@ -133,7 +130,7 @@ export default function ThumbnailMakerLayout() {
       } as ShapeElement;
     }
     else {
-      return;
+      return; // Should not happen with current UI
     }
 
     setElements((prevElements) => [...prevElements, newElement]);
@@ -231,30 +228,31 @@ export default function ThumbnailMakerLayout() {
       return;
     }
 
-    // Temporarily deselect element to hide selection border during export
     const currentSelectedId = selectedElementId;
     setSelectedElementId(null);
     
-    // Give React a moment to re-render without selection
-    await new Promise(resolve => setTimeout(resolve, 50));
+    // Increased timeout for React to re-render without selection
+    await new Promise(resolve => setTimeout(resolve, 300));
 
 
     html2canvas(elementToCapture, { 
         useCORS: true, 
         logging: false,
-        scale: 2, // Capture at higher resolution for better quality
-        // backgroundColor: null // Let html2canvas pick up background from the element itself
+        scale: 2, 
+        backgroundColor: canvasBackgroundImage ? null : canvasBackgroundColor,
+        width: elementToCapture.scrollWidth,
+        height: elementToCapture.scrollHeight,
      }).then(canvas => {
       const image = canvas.toDataURL(`image/${format}`, format === 'jpeg' ? 0.9 : 1.0);
       const link = document.createElement('a');
       link.download = `thumbnail.${format}`;
       link.href = image;
+      document.body.appendChild(link); // Required for Firefox
       link.click();
-      document.body.removeChild(link); // Clean up the link
+      document.body.removeChild(link);
     }).catch(err => {
         console.error('Error exporting canvas:', err);
     }).finally(() => {
-        // Reselect the element if it was selected
         if (currentSelectedId) {
             setSelectedElementId(currentSelectedId);
         }
@@ -324,3 +322,4 @@ export default function ThumbnailMakerLayout() {
     </div>
   );
 }
+
