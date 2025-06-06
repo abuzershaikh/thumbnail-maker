@@ -46,6 +46,11 @@ const CustomCornerRadiusIcon = (props: React.SVGProps<SVGSVGElement>) => (
   </svg>
 );
 
+const FONT_FAMILIES = [
+  'PT Sans', 'Arial', 'Verdana', 'Helvetica', 'Tahoma', 'Trebuchet MS', 'Georgia', 'Times New Roman',
+  'Poppins', 'Archivo', 'Montserrat', 'Lato', 'Roboto', 'Open Sans', 'Oswald', 'Source Sans Pro'
+].sort();
+
 
 export function PropertiesSidebar({ 
     elements, selectedElement, updateElement, deleteElement, selectElement,
@@ -128,13 +133,21 @@ export function PropertiesSidebar({
       </div>
       <div className="space-y-1">
         <Label htmlFor="font-family" className="text-xs">Font Family</Label>
-        <Input
-          id="font-family"
-          value={element.fontFamily}
-          onChange={(e) => handleInputChange('fontFamily', e.target.value)}
-          className="h-8 text-xs"
-          placeholder="e.g., Arial, PT Sans"
-        />
+         <Select
+            value={element.fontFamily}
+            onValueChange={(value: string) => handleInputChange('fontFamily', value)}
+            >
+            <SelectTrigger className="h-8 text-xs">
+                <SelectValue placeholder="Select Font Family" />
+            </SelectTrigger>
+            <SelectContent>
+                {FONT_FAMILIES.map(font => (
+                    <SelectItem key={font} value={font} style={{fontFamily: font}}>
+                        {font}
+                    </SelectItem>
+                ))}
+            </SelectContent>
+        </Select>
       </div>
       <div className="grid grid-cols-2 gap-2">
         <div className="space-y-1">
@@ -553,4 +566,3 @@ export function PropertiesSidebar({
     </Card>
   );
 }
-
