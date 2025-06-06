@@ -3,7 +3,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
-import type { CanvasElement, TextElement, ImageElement, ShapeElement } from '@/types/canvas';
+import type { CanvasElement, TextElement, ImageElement, ShapeElement, ElementType, ShapeType } from '@/types/canvas';
 
 interface CanvasAreaProps {
   elements: CanvasElement[];
@@ -12,6 +12,7 @@ interface CanvasAreaProps {
   updateElement: (id: string, updates: Partial<CanvasElement>) => void;
   canvasBackgroundColor: string;
   canvasBackgroundImage: string | null;
+  addElement: (type: ElementType, shapeType?: ShapeType, options?: { x?: number; y?: number; width?: number; height?: number; }) => void;
 }
 
 interface DraggingState {
@@ -27,7 +28,15 @@ interface DraggingState {
 
 const MIN_ELEMENT_SIZE_PERCENT = 5;
 
-export function CanvasArea({ elements, selectedElementId, selectElement, updateElement, canvasBackgroundColor, canvasBackgroundImage }: CanvasAreaProps) {
+export function CanvasArea({ 
+  elements, 
+  selectedElementId, 
+  selectElement, 
+  updateElement, 
+  canvasBackgroundColor, 
+  canvasBackgroundImage,
+  addElement
+}: CanvasAreaProps) {
   const canvasRef = useRef<HTMLDivElement>(null);
   const [draggingState, setDraggingState] = useState<DraggingState | null>(null);
 
@@ -143,6 +152,26 @@ export function CanvasArea({ elements, selectedElementId, selectElement, updateE
     }
   };
 
+  const handleCanvasDoubleClick = (e: React.MouseEvent) => {
+    if (e.target === canvasRef.current && canvasRef.current && !draggingState) {
+      const canvasDOMRect = canvasRef.current.getBoundingClientRect();
+      const clickX = e.clientX - canvasDOMRect.left;
+      const clickY = e.clientY - canvasDOMRect.top;
+  
+      const xPercent = (clickX / canvasDOMRect.width) * 100;
+      const yPercent = (clickY / canvasDOMRect.height) * 100;
+      
+      const textElementOptions = { 
+        x: xPercent, 
+        y: yPercent, 
+        width: 25, // Default width for double-clicked text
+        height: 8  // Default height for double-clicked text
+      };
+      addElement('text', undefined, textElementOptions);
+    }
+  };
+
+
   const renderElement = (element: CanvasElement) => {
     const isSelected = selectedElementId === element.id;
     const isMovingThisElement = draggingState?.elementId === element.id && draggingState.action === 'move';
@@ -198,6 +227,9 @@ export function CanvasArea({ elements, selectedElementId, selectElement, updateE
         textDecoration: textEl.textDecoration,
         letterSpacing: `${textEl.letterSpacing}px`,
         lineHeight: textEl.lineHeight,
+        textShadow: textEl.shadowColor && textEl.shadowColor !== '#00000000' && (textEl.shadowBlur || textEl.shadowOffsetX || textEl.shadowOffsetY) ?
+          `${textEl.shadowOffsetX || 0}px ${textEl.shadowOffsetY || 0}px ${textEl.shadowBlur || 0}px ${textEl.shadowColor}`
+          : 'none',
         display: 'flex',
         alignItems: 'center', 
         justifyContent: textEl.textAlign === 'left' ? 'flex-start' : textEl.textAlign === 'right' ? 'flex-end' : 'center',
@@ -233,9 +265,9 @@ export function CanvasArea({ elements, selectedElementId, selectElement, updateE
            `${imgEl.shadowOffsetX || 0}px ${imgEl.shadowOffsetY || 0}px ${imgEl.shadowBlur || 0}px ${imgEl.shadowSpreadRadius || 0}px ${imgEl.shadowColor || 'transparent'}`
            : 'none',
        };
-       if (isSelected && imageContainerStyle.border === '1px solid transparent') { // Default to primary dash if no custom border
+       if (isSelected && imageContainerStyle.border === '1px solid transparent') { 
         imageContainerStyle.border = '2px dashed hsl(var(--primary))';
-       } else if (isSelected && imgEl.borderWidth && imgEl.borderWidth > 0) { // Use outline if custom border exists
+       } else if (isSelected && imgEl.borderWidth && imgEl.borderWidth > 0) { 
         imageContainerStyle.outline = '2px dashed hsl(var(--primary))';
         imageContainerStyle.outlineOffset = `${imgEl.borderWidth}px`;
        }
@@ -277,7 +309,7 @@ export function CanvasArea({ elements, selectedElementId, selectElement, updateE
             `${shapeEl.shadowOffsetX || 0}px ${shapeEl.shadowOffsetY || 0}px ${shapeEl.shadowBlur || 0}px ${shapeEl.shadowSpreadRadius || 0}px ${shapeEl.shadowColor || 'transparent'}`
             : 'none',
       };
-       if (isSelected && shapeStyle.border === '1px solid transparent') { // Default state if no border
+       if (isSelected && shapeStyle.border === '1px solid transparent') { 
         shapeStyle.border = '2px dashed hsl(var(--primary))';
        } else if (isSelected && shapeEl.strokeWidth && shapeEl.strokeWidth > 0) {
         shapeStyle.outline = '2px dashed hsl(var(--primary))';
@@ -301,7 +333,11 @@ export function CanvasArea({ elements, selectedElementId, selectElement, updateE
   const finalCanvasBackgroundColor = canvasBackgroundImage ? 'transparent' : canvasBackgroundColor;
 
   return (
-    <div className="flex-1 flex items-center justify-center p-6 bg-muted/40 overflow-auto" onClick={handleCanvasClick}>
+    <div 
+        className="flex-1 flex items-center justify-center p-6 bg-muted/40 overflow-auto" 
+        onClick={handleCanvasClick}
+        onDoubleClick={handleCanvasDoubleClick}
+    >
       <Card
         className="aspect-[16/9] w-full max-w-4xl shadow-2xl overflow-hidden relative"
         style={{
@@ -332,3 +368,4 @@ export function CanvasArea({ elements, selectedElementId, selectElement, updateE
     </div>
   );
 }
+

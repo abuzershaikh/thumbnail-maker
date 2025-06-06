@@ -8,28 +8,65 @@ import { PropertiesSidebar } from '@/components/thumbnail-maker/properties-sideb
 import { Youtube } from 'lucide-react';
 import type { CanvasElement, ElementType, TextElement, ImageElement, ShapeElement, ShapeType } from '@/types/canvas';
 
+interface AddElementOptions {
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
+}
+
 export default function ThumbnailMakerLayout() {
   const [elements, setElements] = useState<CanvasElement[]>([]);
   const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
   const [canvasBackgroundColor, setCanvasBackgroundColor] = useState<string>('#FFFFFF');
   const [canvasBackgroundImage, setCanvasBackgroundImage] = useState<string | null>(null);
 
-  const addElement = useCallback((type: ElementType, shapeType?: ShapeType) => {
+  const addElement = useCallback((
+    type: ElementType, 
+    shapeType?: ShapeType,
+    options?: AddElementOptions
+  ) => {
     const newId = crypto.randomUUID();
-    let newElement: CanvasElement;
+    
+    let elementWidth: number;
+    let elementHeight: number;
 
-    const defaultProps = {
+    if (type === 'text') {
+      elementWidth = options?.width ?? 30;
+      elementHeight = options?.height ?? 10;
+    } else if (type === 'shape') {
+      elementWidth = options?.width ?? 20;
+      elementHeight = options?.height ?? 20;
+    } else { // image
+      elementWidth = options?.width ?? 40;
+      elementHeight = options?.height ?? 30;
+    }
+    
+    let posX = options?.x ?? 10;
+    let posY = options?.y ?? 10;
+
+    // Ensure element added by click doesn't go out of bounds if initial position + default size exceeds canvas
+    if (options?.x !== undefined) {
+        posX = Math.max(0, Math.min(posX, 100 - elementWidth));
+    }
+    if (options?.y !== undefined) {
+        posY = Math.max(0, Math.min(posY, 100 - elementHeight));
+    }
+
+    const baseProps = {
       id: newId,
-      x: 10,
-      y: 10,
-      width: type === 'text' ? 30 : (type === 'shape' ? 20 : 40),
-      height: type === 'text' ? 10 : (type === 'shape' ? 20 : 30),
+      x: posX,
+      y: posY,
+      width: elementWidth,
+      height: elementHeight,
       rotation: 0,
     };
 
+    let newElement: CanvasElement;
+
     if (type === 'text') {
       newElement = {
-        ...defaultProps,
+        ...baseProps,
         type: 'text',
         content: 'New Text',
         fontSize: 24,
@@ -41,10 +78,14 @@ export default function ThumbnailMakerLayout() {
         textDecoration: 'none',
         letterSpacing: 0,
         lineHeight: 1.2,
+        shadowOffsetX: 0,
+        shadowOffsetY: 0,
+        shadowBlur: 0,
+        shadowColor: '#00000000',
       } as TextElement;
     } else if (type === 'image') {
       newElement = {
-        ...defaultProps,
+        ...baseProps,
         type: 'image',
         src: 'https://placehold.co/400x300.png',
         alt: 'Placeholder Image',
@@ -56,12 +97,12 @@ export default function ThumbnailMakerLayout() {
         shadowOffsetY: 0,
         shadowBlur: 0,
         shadowSpreadRadius: 0,
-        shadowColor: '#00000000', // Transparent default shadow
+        shadowColor: '#00000000', 
         'data-ai-hint': 'abstract background',
       } as ImageElement;
     } else if (type === 'shape' && shapeType === 'rectangle') {
       newElement = {
-        ...defaultProps,
+        ...baseProps,
         type: 'shape',
         shapeType: 'rectangle',
         fillColor: '#CCCCCC',
@@ -72,7 +113,7 @@ export default function ThumbnailMakerLayout() {
         shadowOffsetY: 0,
         shadowBlur: 0,
         shadowSpreadRadius: 0,
-        shadowColor: '#00000000', // Transparent default shadow
+        shadowColor: '#00000000',
       } as ShapeElement;
     }
      else {
@@ -192,6 +233,7 @@ export default function ThumbnailMakerLayout() {
           updateElement={updateElement}
           canvasBackgroundColor={canvasBackgroundColor}
           canvasBackgroundImage={canvasBackgroundImage}
+          addElement={addElement}
         />
         <PropertiesSidebar
           elements={elements}
@@ -208,3 +250,4 @@ export default function ThumbnailMakerLayout() {
     </div>
   );
 }
+

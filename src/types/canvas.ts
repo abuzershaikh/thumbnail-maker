@@ -24,6 +24,10 @@ export interface TextElement extends BaseElement {
   textDecoration: 'none' | 'underline' | 'line-through';
   letterSpacing: number; // in px
   lineHeight: number; // unitless multiplier, e.g., 1.2
+  shadowOffsetX?: number; // in px
+  shadowOffsetY?: number; // in px
+  shadowBlur?: number; // in px
+  shadowColor?: string; // color hex
 }
 
 export interface ImageElement extends BaseElement {
@@ -57,3 +61,4 @@ export interface ShapeElement extends BaseElement {
 }
 
 export type CanvasElement = TextElement | ImageElement | ShapeElement;
+
