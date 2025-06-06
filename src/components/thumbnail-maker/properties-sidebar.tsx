@@ -51,6 +51,18 @@ const FONT_FAMILIES = [
   'Poppins', 'Archivo', 'Montserrat', 'Lato', 'Roboto', 'Open Sans', 'Oswald', 'Source Sans Pro'
 ].sort();
 
+const FONT_WEIGHTS = [
+  { label: 'Thin (100)', value: '100' },
+  { label: 'Extra Light (200)', value: '200' },
+  { label: 'Light (300)', value: '300' },
+  { label: 'Normal (400)', value: '400' },
+  { label: 'Medium (500)', value: '500' },
+  { label: 'Semi Bold (600)', value: '600' },
+  { label: 'Bold (700)', value: '700' },
+  { label: 'Extra Bold (800)', value: '800' },
+  { label: 'Black (900)', value: '900' },
+];
+
 
 export function PropertiesSidebar({ 
     elements, selectedElement, updateElement, deleteElement, selectElement,
@@ -169,16 +181,19 @@ export function PropertiesSidebar({
         <div className="space-y-1">
             <Label htmlFor="font-weight" className="text-xs flex items-center gap-1"><BoldIcon className="h-3 w-3" />Weight</Label>
             <Select
-            value={element.fontWeight}
-            onValueChange={(value: 'normal' | 'bold') => handleInputChange('fontWeight', value)}
+                value={element.fontWeight}
+                onValueChange={(value: string) => handleInputChange('fontWeight', value)}
             >
-            <SelectTrigger className="h-8 text-xs">
-                <SelectValue placeholder="Weight" />
-            </SelectTrigger>
-            <SelectContent>
-                <SelectItem value="normal">Normal</SelectItem>
-                <SelectItem value="bold">Bold</SelectItem>
-            </SelectContent>
+                <SelectTrigger className="h-8 text-xs">
+                    <SelectValue placeholder="Weight" />
+                </SelectTrigger>
+                <SelectContent>
+                    {FONT_WEIGHTS.map(weight => (
+                        <SelectItem key={weight.value} value={weight.value} style={{fontWeight: weight.value}}>
+                            {weight.label}
+                        </SelectItem>
+                    ))}
+                </SelectContent>
             </Select>
         </div>
       </div>

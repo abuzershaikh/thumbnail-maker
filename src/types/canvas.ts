@@ -19,7 +19,7 @@ export interface TextElement extends BaseElement {
   fontFamily: string;
   color: string;
   textAlign: 'left' | 'center' | 'right';
-  fontWeight: 'normal' | 'bold';
+  fontWeight: string; // e.g., 'normal', 'bold', '400', '700'
   fontStyle: 'normal' | 'italic';
   textDecoration: 'none' | 'underline' | 'line-through';
   letterSpacing: number; // in px
@@ -61,4 +61,3 @@ export interface ShapeElement extends BaseElement {
 }
 
 export type CanvasElement = TextElement | ImageElement | ShapeElement;
-

@@ -45,7 +45,6 @@ export default function ThumbnailMakerLayout() {
     let posX = options?.x ?? 10;
     let posY = options?.y ?? 10;
 
-    // Ensure element added by click doesn't go out of bounds if initial position + default size exceeds canvas
     if (options?.x !== undefined) {
         posX = Math.max(0, Math.min(posX, 100 - elementWidth));
     }
@@ -73,7 +72,7 @@ export default function ThumbnailMakerLayout() {
         fontFamily: 'PT Sans',
         color: '#333333',
         textAlign: 'left',
-        fontWeight: 'normal',
+        fontWeight: '400', // Default to normal/400
         fontStyle: 'normal',
         textDecoration: 'none',
         letterSpacing: 0,
@@ -250,4 +249,3 @@ export default function ThumbnailMakerLayout() {
     </div>
   );
 }
-
