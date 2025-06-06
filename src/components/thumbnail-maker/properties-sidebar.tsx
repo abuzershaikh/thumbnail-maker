@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { LayersIcon, PaletteIcon, AlignCenterIcon, TypeIcon, ImagePlayIcon, Settings2Icon } from 'lucide-react';
+import { LayersIcon, PaletteIcon, AlignCenterIcon, TypeIcon, ImagePlayIcon, Settings2Icon, RotateCcwIcon } from 'lucide-react';
 import type { CanvasElement, TextElement, ImageElement } from '@/types/canvas';
 
 interface PropertiesSidebarProps {
@@ -149,25 +149,27 @@ export function PropertiesSidebar({ selectedElement, updateElement }: Properties
       <div className="grid grid-cols-2 gap-2">
         <div className="space-y-1">
           <Label htmlFor="pos-x" className="text-xs">X (%)</Label>
-          <Input id="pos-x" type="number" value={element.x} onChange={(e) => handleInputChange('x', parseFloat(e.target.value) || 0)} className="h-8 text-xs" />
+          <Input id="pos-x" type="number" value={Number(element.x.toFixed(2))} onChange={(e) => handleInputChange('x', parseFloat(e.target.value) || 0)} className="h-8 text-xs" />
         </div>
         <div className="space-y-1">
           <Label htmlFor="pos-y" className="text-xs">Y (%)</Label>
-          <Input id="pos-y" type="number" value={element.y} onChange={(e) => handleInputChange('y', parseFloat(e.target.value) || 0)} className="h-8 text-xs" />
+          <Input id="pos-y" type="number" value={Number(element.y.toFixed(2))} onChange={(e) => handleInputChange('y', parseFloat(e.target.value) || 0)} className="h-8 text-xs" />
         </div>
       </div>
       <div className="grid grid-cols-2 gap-2">
         <div className="space-y-1">
           <Label htmlFor="width" className="text-xs">Width (%)</Label>
-          <Input id="width" type="number" value={element.width} onChange={(e) => handleInputChange('width', parseFloat(e.target.value) || 0)} className="h-8 text-xs" />
+          <Input id="width" type="number" value={Number(element.width.toFixed(2))} onChange={(e) => handleInputChange('width', parseFloat(e.target.value) || 0)} className="h-8 text-xs" />
         </div>
         <div className="space-y-1">
           <Label htmlFor="height" className="text-xs">Height (%)</Label>
-          <Input id="height" type="number" value={element.height} onChange={(e) => handleInputChange('height', parseFloat(e.target.value) || 0)} className="h-8 text-xs" />
+          <Input id="height" type="number" value={Number(element.height.toFixed(2))} onChange={(e) => handleInputChange('height', parseFloat(e.target.value) || 0)} className="h-8 text-xs" />
         </div>
       </div>
        <div className="space-y-1">
-        <Label htmlFor="rotation" className="text-xs">Rotation (°)</Label>
+        <Label htmlFor="rotation" className="text-xs flex items-center gap-1">
+            <RotateCcwIcon className="h-3 w-3" /> Rotation (°)
+        </Label>
         <Input 
           id="rotation" 
           type="number"
@@ -176,7 +178,7 @@ export function PropertiesSidebar({ selectedElement, updateElement }: Properties
           className="h-8 text-xs"
         />
         <Slider 
-          defaultValue={[element.rotation]} 
+          value={[element.rotation]} 
           min={0}
           max={360} 
           step={1} 
@@ -220,3 +222,5 @@ export function PropertiesSidebar({ selectedElement, updateElement }: Properties
     </Card>
   );
 }
+
+    
