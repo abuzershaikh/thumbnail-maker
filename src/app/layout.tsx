@@ -4,8 +4,8 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 
 export const metadata: Metadata = {
-  title: 'WA Contact Harvester',
-  description: 'Extract unsaved contacts from WhatsApp chats.',
+  title: 'YouTube Thumbnail Maker',
+  description: 'Create stunning YouTube thumbnails easily.',
 };
 
 export default function RootLayout({

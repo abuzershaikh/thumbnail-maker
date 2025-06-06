@@ -1,4 +1,6 @@
+
 import { config } from 'dotenv';
 config();
 
-import '@/ai/flows/extract-contacts-from-chat.ts';
+// No flows are currently defined for the thumbnail maker.
+// This file is kept for potential future AI features.
