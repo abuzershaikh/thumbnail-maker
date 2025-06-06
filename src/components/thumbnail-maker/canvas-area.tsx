@@ -12,15 +12,22 @@ interface CanvasAreaProps {
   updateElement: (id: string, updates: Partial<CanvasElement>) => void;
 }
 
+interface DraggingState {
+  elementId: string;
+  action: 'move' | 'resize';
+  initialMouseX: number; // viewport clientX
+  initialMouseY: number; // viewport clientY
+  initialElementX: number; // percentage
+  initialElementY: number; // percentage
+  initialElementWidth?: number; // percentage, for resizing
+  initialElementHeight?: number; // percentage, for resizing
+}
+
+const MIN_ELEMENT_SIZE_PERCENT = 5; // Minimum 5% width/height
+
 export function CanvasArea({ elements, selectedElementId, selectElement, updateElement }: CanvasAreaProps) {
   const canvasRef = useRef<HTMLDivElement>(null);
-  const [draggingState, setDraggingState] = useState<{
-    elementId: string;
-    initialMouseX: number; // viewport clientX
-    initialMouseY: number; // viewport clientY
-    initialElementX: number; // percentage
-    initialElementY: number; // percentage
-  } | null>(null);
+  const [draggingState, setDraggingState] = useState<DraggingState | null>(null);
 
   const handleElementMouseDown = (
     e: React.MouseEvent,
@@ -30,10 +37,10 @@ export function CanvasArea({ elements, selectedElementId, selectElement, updateE
     e.stopPropagation();
     selectElement(element.id);
 
-    // Only proceed if canvasRef is available
     if (!canvasRef.current) return;
 
     setDraggingState({
+      action: 'move',
       elementId: element.id,
       initialMouseX: e.clientX,
       initialMouseY: e.clientY,
@@ -42,38 +49,75 @@ export function CanvasArea({ elements, selectedElementId, selectElement, updateE
     });
   };
 
+  const handleResizeHandleMouseDown = (
+    e: React.MouseEvent,
+    element: CanvasElement
+  ) => {
+    e.preventDefault();
+    e.stopPropagation(); // Prevent element move and canvas click
+    selectElement(element.id); // Ensure element is selected
+
+    if (!canvasRef.current) return;
+
+    setDraggingState({
+      action: 'resize',
+      elementId: element.id,
+      initialMouseX: e.clientX,
+      initialMouseY: e.clientY,
+      initialElementX: element.x,
+      initialElementY: element.y,
+      initialElementWidth: element.width,
+      initialElementHeight: element.height,
+    });
+  };
+
   useEffect(() => {
     const handleDocumentMouseMove = (e: MouseEvent) => {
       if (!draggingState || !canvasRef.current) return;
 
       const canvasDOMRect = canvasRef.current.getBoundingClientRect();
-      const canvasWidth = canvasDOMRect.width;
-      const canvasHeight = canvasDOMRect.height;
+      const canvasWidthPx = canvasDOMRect.width;
+      const canvasHeightPx = canvasDOMRect.height;
 
-      // Prevent division by zero or issues if canvas isn't rendered with dimensions
-      if (canvasWidth === 0 || canvasHeight === 0) return;
+      if (canvasWidthPx === 0 || canvasHeightPx === 0) return;
 
       const deltaMouseX = e.clientX - draggingState.initialMouseX;
       const deltaMouseY = e.clientY - draggingState.initialMouseY;
-
-      const deltaPercentX = (deltaMouseX / canvasWidth) * 100;
-      const deltaPercentY = (deltaMouseY / canvasHeight) * 100;
       
       const currentElement = elements.find(el => el.id === draggingState.elementId);
       if (!currentElement) return;
 
-      let newX = draggingState.initialElementX + deltaPercentX;
-      let newY = draggingState.initialElementY + deltaPercentY;
+      if (draggingState.action === 'move') {
+        const deltaPercentX = (deltaMouseX / canvasWidthPx) * 100;
+        const deltaPercentY = (deltaMouseY / canvasHeightPx) * 100;
 
-      // Clamp values to keep element within canvas boundaries (top-left corner relative)
-      newX = Math.max(0, Math.min(newX, 100 - currentElement.width));
-      newY = Math.max(0, Math.min(newY, 100 - currentElement.height));
-      
-      // Ensure values are numbers, not NaN
-      newX = isNaN(newX) ? draggingState.initialElementX : newX;
-      newY = isNaN(newY) ? draggingState.initialElementY : newY;
+        let newX = draggingState.initialElementX + deltaPercentX;
+        let newY = draggingState.initialElementY + deltaPercentY;
 
-      updateElement(draggingState.elementId, { x: newX, y: newY });
+        newX = Math.max(0, Math.min(newX, 100 - currentElement.width));
+        newY = Math.max(0, Math.min(newY, 100 - currentElement.height));
+        
+        newX = isNaN(newX) ? draggingState.initialElementX : newX;
+        newY = isNaN(newY) ? draggingState.initialElementY : newY;
+
+        updateElement(draggingState.elementId, { x: newX, y: newY });
+
+      } else if (draggingState.action === 'resize' && draggingState.initialElementWidth !== undefined && draggingState.initialElementHeight !== undefined) {
+        let newWidth = draggingState.initialElementWidth + (deltaMouseX / canvasWidthPx) * 100;
+        let newHeight = draggingState.initialElementHeight + (deltaMouseY / canvasHeightPx) * 100;
+
+        newWidth = Math.max(MIN_ELEMENT_SIZE_PERCENT, newWidth);
+        newHeight = Math.max(MIN_ELEMENT_SIZE_PERCENT, newHeight);
+        
+        // Ensure element does not resize beyond canvas boundaries from its current position
+        newWidth = Math.min(newWidth, 100 - currentElement.x);
+        newHeight = Math.min(newHeight, 100 - currentElement.y);
+
+        newWidth = isNaN(newWidth) ? draggingState.initialElementWidth : newWidth;
+        newHeight = isNaN(newHeight) ? draggingState.initialElementHeight : newHeight;
+        
+        updateElement(draggingState.elementId, { width: newWidth, height: newHeight });
+      }
     };
 
     const handleDocumentMouseUp = () => {
@@ -93,32 +137,37 @@ export function CanvasArea({ elements, selectedElementId, selectElement, updateE
 
 
   const handleCanvasClick = () => {
-    if (!draggingState) { // Only deselect if not ending a drag on the canvas
+    if (!draggingState) { 
         selectElement(null);
     }
   };
 
   const renderElement = (element: CanvasElement) => {
     const isSelected = selectedElementId === element.id;
-    const isDraggingThisElement = draggingState?.elementId === element.id;
+    const isMovingThisElement = draggingState?.elementId === element.id && draggingState.action === 'move';
+    const isResizingThisElement = draggingState?.elementId === element.id && draggingState.action === 'resize';
 
-    const style: React.CSSProperties = {
+    const baseStyle: React.CSSProperties = {
       position: 'absolute',
       left: `${element.x}%`,
       top: `${element.y}%`,
       width: `${element.width}%`,
       height: `${element.height}%`,
       transform: `rotate(${element.rotation}deg)`,
-      cursor: isDraggingThisElement ? 'grabbing' : 'grab',
       border: isSelected ? '2px dashed hsl(var(--primary))' : '1px solid transparent',
       boxSizing: 'border-box',
       overflow: 'hidden', 
     };
 
+    const interactionStyle: React.CSSProperties = {
+        cursor: isMovingThisElement ? 'grabbing' : (isResizingThisElement ? 'nwse-resize' : 'grab'),
+    };
+
     if (element.type === 'text') {
       const textEl = element as TextElement;
       const textStyle: React.CSSProperties = {
-        ...style,
+        ...baseStyle,
+        ...interactionStyle,
         fontSize: `${textEl.fontSize}px`,
         fontFamily: textEl.fontFamily,
         color: textEl.color,
@@ -135,9 +184,28 @@ export function CanvasArea({ elements, selectedElementId, selectElement, updateE
           key={element.id} 
           style={textStyle} 
           onMouseDown={(e) => handleElementMouseDown(e, element)}
-          onClick={(e) => e.stopPropagation()} // Prevent canvas click when clicking element
+          onClick={(e) => e.stopPropagation()} 
         >
           {textEl.content}
+          {isSelected && (
+            <div
+              onMouseDown={(e) => handleResizeHandleMouseDown(e, element)}
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                position: 'absolute',
+                bottom: '-4px',
+                right: '-4px',
+                width: '10px',
+                height: '10px',
+                backgroundColor: 'hsl(var(--primary))',
+                border: '1px solid hsl(var(--background))',
+                borderRadius: '50%',
+                cursor: 'nwse-resize',
+                zIndex: 100,
+              }}
+              data-ai-hint="resize handle"
+            />
+          )}
         </div>
       );
     }
@@ -145,7 +213,8 @@ export function CanvasArea({ elements, selectedElementId, selectElement, updateE
     if (element.type === 'image') {
       const imgEl = element as ImageElement;
        const imageContainerStyle: React.CSSProperties = {
-         ...style,
+         ...baseStyle,
+         ...interactionStyle,
          display: 'flex',
          justifyContent: 'center',
          alignItems: 'center',
@@ -155,8 +224,8 @@ export function CanvasArea({ elements, selectedElementId, selectElement, updateE
           key={element.id} 
           style={imageContainerStyle} 
           onMouseDown={(e) => handleElementMouseDown(e, element)}
-          onClick={(e) => e.stopPropagation()} // Prevent canvas click
-          data-ai-hint="image element"
+          onClick={(e) => e.stopPropagation()} 
+          data-ai-hint={imgEl.src.startsWith('data:') ? 'uploaded image' : 'placeholder image'}
         >
           <img 
             src={imgEl.src} 
@@ -165,10 +234,29 @@ export function CanvasArea({ elements, selectedElementId, selectElement, updateE
               width: '100%', 
               height: '100%', 
               objectFit: imgEl.objectFit,
-              pointerEvents: 'none', // Prevent image's native drag behavior
+              pointerEvents: 'none', 
             }}
             draggable={false}
           />
+          {isSelected && (
+            <div
+              onMouseDown={(e) => handleResizeHandleMouseDown(e, element)}
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                position: 'absolute',
+                bottom: '-4px',
+                right: '-4px',
+                width: '10px',
+                height: '10px',
+                backgroundColor: 'hsl(var(--primary))',
+                border: '1px solid hsl(var(--background))',
+                borderRadius: '50%',
+                cursor: 'nwse-resize',
+                zIndex: 100,
+              }}
+              data-ai-hint="resize handle"
+            />
+          )}
         </div>
       );
     }
@@ -180,7 +268,7 @@ export function CanvasArea({ elements, selectedElementId, selectElement, updateE
       <Card 
         className="aspect-[16/9] w-full max-w-4xl bg-card shadow-2xl overflow-hidden relative"
         style={{ 
-          maxWidth: 'min(calc(100vh * 16 / 9 * 0.8), 100%)', // Maintain aspect ratio and limit size
+          maxWidth: 'min(calc(100vh * 16 / 9 * 0.8), 100%)',
           maxHeight: 'calc(100vh * 0.8)' 
         }}
       >
@@ -188,7 +276,7 @@ export function CanvasArea({ elements, selectedElementId, selectElement, updateE
             id="thumbnail-canvas" 
             ref={canvasRef}
             className="w-full h-full bg-white relative"
-            data-ai-hint="youtube thumbnail design"
+            data-ai-hint="youtube thumbnail design canvas"
         >
           {elements.length === 0 && (
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">

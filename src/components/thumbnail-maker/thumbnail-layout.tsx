@@ -5,7 +5,6 @@ import React, { useState, useCallback } from 'react';
 import { ElementsSidebar } from '@/components/thumbnail-maker/elements-sidebar';
 import { CanvasArea } from '@/components/thumbnail-maker/canvas-area';
 import { PropertiesSidebar } from '@/components/thumbnail-maker/properties-sidebar';
-import { Card, CardHeader, CardTitle } from '@/components/ui/card';
 import { Youtube } from 'lucide-react';
 import type { CanvasElement, ElementType, TextElement, ImageElement } from '@/types/canvas';
 
@@ -45,9 +44,27 @@ export default function ThumbnailMakerLayout() {
         objectFit: 'cover',
       } as ImageElement;
     } else {
-      return; // Unknown type
+      return; 
     }
 
+    setElements((prevElements) => [...prevElements, newElement]);
+    setSelectedElementId(newId);
+  }, []);
+
+  const handleImageUpload = useCallback((dataUrl: string) => {
+    const newId = crypto.randomUUID();
+    const newElement: ImageElement = {
+      id: newId,
+      type: 'image',
+      src: dataUrl,
+      alt: 'Uploaded image',
+      x: 10,
+      y: 10,
+      width: 40, // Default width for uploaded images
+      height: 30, // Default height for uploaded images
+      rotation: 0,
+      objectFit: 'contain', // Default to contain for uploaded images
+    };
     setElements((prevElements) => [...prevElements, newElement]);
     setSelectedElementId(newId);
   }, []);
@@ -75,7 +92,7 @@ export default function ThumbnailMakerLayout() {
         </div>
       </header>
       <main className="flex flex-1 overflow-hidden">
-        <ElementsSidebar addElement={addElement} />
+        <ElementsSidebar addElement={addElement} onImageUpload={handleImageUpload} />
         <CanvasArea
           elements={elements}
           selectedElementId={selectedElementId}
