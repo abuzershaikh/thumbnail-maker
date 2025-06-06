@@ -49,6 +49,11 @@ export interface ShapeElement extends BaseElement {
   strokeColor: string;
   strokeWidth: number;
   cornerRadius?: number; // For rounded rectangles
+  shadowOffsetX?: number; // in px
+  shadowOffsetY?: number; // in px
+  shadowBlur?: number; // in px
+  shadowSpreadRadius?: number; // in px
+  shadowColor?: string; // color hex
 }
 
 export type CanvasElement = TextElement | ImageElement | ShapeElement;

@@ -229,13 +229,13 @@ export function CanvasArea({ elements, selectedElementId, selectElement, updateE
          alignItems: 'center',
          borderRadius: imgEl.borderRadius ? `${imgEl.borderRadius}px` : '0px',
          border: `${imgEl.borderWidth || 0}px solid ${imgEl.borderColor || 'transparent'}`,
-         boxShadow: imgEl.shadowColor !== '#00000000' ? // Only apply shadow if color is not fully transparent
+         boxShadow: imgEl.shadowColor !== '#00000000' && (imgEl.shadowBlur || imgEl.shadowOffsetX || imgEl.shadowOffsetY || imgEl.shadowSpreadRadius) ? 
            `${imgEl.shadowOffsetX || 0}px ${imgEl.shadowOffsetY || 0}px ${imgEl.shadowBlur || 0}px ${imgEl.shadowSpreadRadius || 0}px ${imgEl.shadowColor || 'transparent'}`
            : 'none',
        };
-       if (isSelected && imageContainerStyle.border === '1px solid transparent') {
+       if (isSelected && imageContainerStyle.border === '1px solid transparent') { // Default to primary dash if no custom border
         imageContainerStyle.border = '2px dashed hsl(var(--primary))';
-       } else if (isSelected && imgEl.borderWidth && imgEl.borderWidth > 0) {
+       } else if (isSelected && imgEl.borderWidth && imgEl.borderWidth > 0) { // Use outline if custom border exists
         imageContainerStyle.outline = '2px dashed hsl(var(--primary))';
         imageContainerStyle.outlineOffset = `${imgEl.borderWidth}px`;
        }
@@ -273,6 +273,9 @@ export function CanvasArea({ elements, selectedElementId, selectElement, updateE
         backgroundColor: shapeEl.fillColor,
         border: `${shapeEl.strokeWidth}px solid ${shapeEl.strokeColor}`,
         borderRadius: `${shapeEl.cornerRadius || 0}px`,
+        boxShadow: shapeEl.shadowColor !== '#00000000' && (shapeEl.shadowBlur || shapeEl.shadowOffsetX || shapeEl.shadowOffsetY || shapeEl.shadowSpreadRadius) ?
+            `${shapeEl.shadowOffsetX || 0}px ${shapeEl.shadowOffsetY || 0}px ${shapeEl.shadowBlur || 0}px ${shapeEl.shadowSpreadRadius || 0}px ${shapeEl.shadowColor || 'transparent'}`
+            : 'none',
       };
        if (isSelected && shapeStyle.border === '1px solid transparent') { // Default state if no border
         shapeStyle.border = '2px dashed hsl(var(--primary))';

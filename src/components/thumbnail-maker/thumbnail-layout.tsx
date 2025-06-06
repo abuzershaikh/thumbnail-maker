@@ -68,6 +68,11 @@ export default function ThumbnailMakerLayout() {
         strokeColor: '#333333',
         strokeWidth: 1,
         cornerRadius: 0,
+        shadowOffsetX: 0,
+        shadowOffsetY: 0,
+        shadowBlur: 0,
+        shadowSpreadRadius: 0,
+        shadowColor: '#00000000', // Transparent default shadow
       } as ShapeElement;
     }
      else {

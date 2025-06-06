@@ -389,6 +389,31 @@ export function PropertiesSidebar({
           />
         </div>
       )}
+       <div className="pt-2 space-y-1">
+        <h5 className="text-xs font-medium flex items-center gap-1 mb-1"><CopyIcon className="h-3 w-3 text-muted-foreground" /> Shadow</h5>
+        <div className="grid grid-cols-2 gap-2">
+            <div>
+                <Label htmlFor="shape-shadow-offset-x" className="text-xs">Offset X (px)</Label>
+                <Input id="shape-shadow-offset-x" type="number" value={element.shadowOffsetX || 0} onChange={(e) => handleInputChange('shadowOffsetX', e.target.value)} className="h-8 text-xs" />
+                <Slider value={[element.shadowOffsetX || 0]} min={-50} max={50} step={1} onValueChange={(value) => handleSliderChange('shadowOffsetX', value)} className="mt-1" />
+            </div>
+            <div>
+                <Label htmlFor="shape-shadow-offset-y" className="text-xs">Offset Y (px)</Label>
+                <Input id="shape-shadow-offset-y" type="number" value={element.shadowOffsetY || 0} onChange={(e) => handleInputChange('shadowOffsetY', e.target.value)} className="h-8 text-xs" />
+                <Slider value={[element.shadowOffsetY || 0]} min={-50} max={50} step={1} onValueChange={(value) => handleSliderChange('shadowOffsetY', value)} className="mt-1" />
+            </div>
+        </div>
+        <Label htmlFor="shape-shadow-blur" className="text-xs mt-2">Blur (px)</Label>
+        <Input id="shape-shadow-blur" type="number" value={element.shadowBlur || 0} onChange={(e) => handleInputChange('shadowBlur', e.target.value)} className="h-8 text-xs" min="0" />
+        <Slider value={[element.shadowBlur || 0]} max={100} step={1} onValueChange={(value) => handleSliderChange('shadowBlur', value)} className="mt-1" />
+
+        <Label htmlFor="shape-shadow-spread" className="text-xs mt-2">Spread (px)</Label>
+        <Input id="shape-shadow-spread" type="number" value={element.shadowSpreadRadius || 0} onChange={(e) => handleInputChange('shadowSpreadRadius', e.target.value)} className="h-8 text-xs" />
+        <Slider value={[element.shadowSpreadRadius || 0]} min={-50} max={50} step={1} onValueChange={(value) => handleSliderChange('shadowSpreadRadius', value)} className="mt-1" />
+
+        <Label htmlFor="shape-shadow-color" className="text-xs mt-2 flex items-center gap-1"><Palette className="h-3 w-3 text-muted-foreground" />Color</Label>
+        <Input id="shape-shadow-color" type="color" value={element.shadowColor || '#00000000'} onChange={(e) => handleInputChange('shadowColor', e.target.value)} className="h-8 p-1" />
+      </div>
     </div>
   );
 
