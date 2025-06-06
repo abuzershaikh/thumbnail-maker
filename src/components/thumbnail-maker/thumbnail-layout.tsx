@@ -8,7 +8,7 @@ import { PropertiesSidebar } from '@/components/thumbnail-maker/properties-sideb
 import { Youtube } from 'lucide-react';
 import type { CanvasElement, ElementType, TextElement, ImageElement, ShapeElement, ShapeType } from '@/types/canvas';
 
-interface AddElementOptions {
+export interface AddElementOptions {
   x?: number;
   y?: number;
   width?: number;
@@ -46,27 +46,33 @@ export default function ThumbnailMakerLayout() {
     let posX = options?.x ?? 10;
     let posY = options?.y ?? 10;
 
-    if (options?.x !== undefined) {
-      posX = Math.max(0, Math.min(posX, 100 - elementWidth));
-    }
-    if (options?.y !== undefined) {
-      posY = Math.max(0, Math.min(posY, 100 - elementHeight));
+    if (options?.x !== undefined && options?.width !== undefined) {
+      posX = Math.max(0, Math.min(posX, 100 - options.width));
+    } else if (options?.x !== undefined) {
+       posX = Math.max(0, Math.min(posX, 100 - elementWidth));
     }
 
-    const baseProps = {
+    if (options?.y !== undefined && options?.height !== undefined) {
+      posY = Math.max(0, Math.min(posY, 100 - options.height));
+    } else if (options?.y !== undefined) {
+        posY = Math.max(0, Math.min(posY, 100 - elementHeight));
+    }
+
+
+    const baseProps: Partial<CanvasElement> = { // Make baseProps partial to allow initialProps to fully override
       id: newId,
       x: posX,
       y: posY,
       width: elementWidth,
       height: elementHeight,
       rotation: 0,
-      ...options?.initialProps
     };
 
     let newElement: CanvasElement;
 
     if (type === 'text') {
       newElement = {
+        ...baseProps, // Spread baseProps first
         type: 'text',
         content: 'New Text',
         fontSize: 24,
@@ -81,11 +87,12 @@ export default function ThumbnailMakerLayout() {
         shadowOffsetX: 0,
         shadowOffsetY: 0,
         shadowBlur: 0,
-        shadowColor: '#00000000',
-        ...baseProps, // Spread baseProps here to allow override by initialProps
+        shadowColor: '#00000000', // Default transparent shadow
+        ...options?.initialProps, // Then spread initialProps to override anything from base or defaults
       } as TextElement;
     } else if (type === 'image') {
       newElement = {
+        ...baseProps,
         type: 'image',
         src: 'https://placehold.co/400x300.png',
         alt: 'Placeholder Image',
@@ -100,10 +107,11 @@ export default function ThumbnailMakerLayout() {
         shadowColor: '#00000000',
         'data-ai-hint': 'abstract background',
         filterBlur: 0,
-        ...baseProps,
+        ...options?.initialProps,
       } as ImageElement;
     } else if (type === 'shape' && shapeType === 'rectangle') {
       newElement = {
+        ...baseProps,
         type: 'shape',
         shapeType: 'rectangle',
         fillColor: '#CCCCCC',
@@ -116,7 +124,7 @@ export default function ThumbnailMakerLayout() {
         shadowSpreadRadius: 0,
         shadowColor: '#00000000',
         filterBlur: 0,
-        ...baseProps,
+        ...options?.initialProps,
       } as ShapeElement;
     }
     else {
@@ -237,7 +245,7 @@ export default function ThumbnailMakerLayout() {
           updateElement={updateElement}
           canvasBackgroundColor={canvasBackgroundColor}
           canvasBackgroundImage={canvasBackgroundImage}
-          addElement={addElement}
+          addElement={addElement} // Pass addElement here
         />
         <PropertiesSidebar
           elements={elements}

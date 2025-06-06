@@ -60,6 +60,8 @@ export interface ShapeElement extends BaseElement {
   shadowSpreadRadius?: number; // in px
   shadowColor?: string; // color hex
   filterBlur?: number; // in px
+  'data-ai-hint'?: string;
 }
 
 export type CanvasElement = TextElement | ImageElement | ShapeElement;
+

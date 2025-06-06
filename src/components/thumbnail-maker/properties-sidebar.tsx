@@ -71,7 +71,7 @@ export function PropertiesSidebar({
 
   const handleInputChange = (property: keyof CanvasElement | keyof TextElement | keyof ImageElement | keyof ShapeElement, value: any) => {
     if (selectedElement) {
-        if (typeof value === 'string' && (property === 'letterSpacing' || property === 'lineHeight' || property === 'borderRadius' || property === 'borderWidth' || property === 'shadowOffsetX' || property === 'shadowOffsetY' || property === 'shadowBlur' || property === 'shadowSpreadRadius' || property === 'strokeWidth' || property === 'cornerRadius' || property === 'filterBlur')) {
+        if (typeof value === 'string' && (property === 'letterSpacing' || property === 'lineHeight' || property === 'borderRadius' || property === 'borderWidth' || property === 'shadowOffsetX' || property === 'shadowOffsetY' || property === 'shadowBlur' || property === 'shadowSpreadRadius' || property === 'strokeWidth' || property === 'cornerRadius' || property === 'filterBlur' || property === 'fontSize')) {
             const numValue = parseFloat(value);
             updateElement(selectedElement.id, { [property]: isNaN(numValue) ? 0 : numValue });
         } else {
@@ -109,13 +109,14 @@ export function PropertiesSidebar({
     <div className="space-y-3 p-3 border rounded-md bg-muted/20">
       <h4 className="font-medium text-sm flex items-center gap-2"><TypeIcon className="h-4 w-4" /> Text Properties</h4>
       <div className="space-y-1">
-        <Label htmlFor="text-content" className="text-xs">Content</Label>
+        <Label htmlFor="text-content" className="text-xs">Content (Editable on Canvas)</Label>
         <Textarea
           id="text-content"
           value={element.content}
           onChange={(e) => handleInputChange('content', e.target.value)}
           placeholder="Enter text"
           className="h-20 text-xs"
+          readOnly // Content is edited directly on canvas
         />
       </div>
       <div className="space-y-1">
@@ -275,17 +276,17 @@ export function PropertiesSidebar({
         <div className="grid grid-cols-2 gap-2">
             <div>
                 <Label htmlFor="text-shadow-offset-x" className="text-xs">Offset X (px)</Label>
-                <Input id="text-shadow-offset-x" type="number" value={element.shadowOffsetX || 0} onChange={(e) => handleInputChange('shadowOffsetX', e.target.value)} className="h-8 text-xs" />
+                <Input id="text-shadow-offset-x" type="number" value={element.shadowOffsetX || 0} onChange={(e) => handleInputChange('shadowOffsetX', parseFloat(e.target.value))} className="h-8 text-xs" />
                 <Slider value={[element.shadowOffsetX || 0]} min={-20} max={20} step={1} onValueChange={(value) => handleSliderChange('shadowOffsetX', value)} className="mt-1" />
             </div>
             <div>
                 <Label htmlFor="text-shadow-offset-y" className="text-xs">Offset Y (px)</Label>
-                <Input id="text-shadow-offset-y" type="number" value={element.shadowOffsetY || 0} onChange={(e) => handleInputChange('shadowOffsetY', e.target.value)} className="h-8 text-xs" />
+                <Input id="text-shadow-offset-y" type="number" value={element.shadowOffsetY || 0} onChange={(e) => handleInputChange('shadowOffsetY', parseFloat(e.target.value))} className="h-8 text-xs" />
                 <Slider value={[element.shadowOffsetY || 0]} min={-20} max={20} step={1} onValueChange={(value) => handleSliderChange('shadowOffsetY', value)} className="mt-1" />
             </div>
         </div>
         <Label htmlFor="text-shadow-blur" className="text-xs mt-2">Blur (px)</Label>
-        <Input id="text-shadow-blur" type="number" value={element.shadowBlur || 0} onChange={(e) => handleInputChange('shadowBlur', e.target.value)} className="h-8 text-xs" min="0" />
+        <Input id="text-shadow-blur" type="number" value={element.shadowBlur || 0} onChange={(e) => handleInputChange('shadowBlur', parseFloat(e.target.value))} className="h-8 text-xs" min="0" />
         <Slider value={[element.shadowBlur || 0]} max={30} step={1} onValueChange={(value) => handleSliderChange('shadowBlur', value)} className="mt-1" />
 
         <Label htmlFor="text-shadow-color" className="text-xs mt-2 flex items-center gap-1"><Palette className="h-3 w-3 text-muted-foreground" />Color</Label>
