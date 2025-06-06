@@ -91,14 +91,12 @@ export function CanvasArea({
     // If the actual mousedown target is a textarea (meaning direct text interaction),
     // do not initiate element dragging.
     if ((e.target as HTMLElement).nodeName === 'TEXTAREA') {
-      // Ensure the element is selected for property panel updates, even if not dragging.
-      // The EditableTextarea's onClick will also handle selection.
       selectElement(element.id);
       return;
     }
     
-    e.preventDefault(); // Prevent text selection on canvas during drag
-    e.stopPropagation(); // Stop propagation to canvas handlers
+    e.preventDefault(); 
+    e.stopPropagation(); 
     selectElement(element.id);
 
     if (!canvasRef.current) return;
@@ -200,8 +198,12 @@ export function CanvasArea({
 
 
   const handleCanvasClick = (e: React.MouseEvent) => {
-    // If the click is on the canvas itself (not an element) and not during a drag action
-    if (e.target === canvasRef.current?.parentElement?.parentElement && !draggingState) {
+    // If the click target is the direct parent of the canvas div (i.e., the Card)
+    // or the canvas background itself, and not during a drag operation, deselect.
+    const targetIsCard = (e.target as HTMLElement).id === 'exportable-canvas-container';
+    const targetIsCanvasDiv = e.target === canvasRef.current;
+    
+    if ((targetIsCard || targetIsCanvasDiv) && !draggingState) {
         selectElement(null);
     }
   };
@@ -222,7 +224,7 @@ export function CanvasArea({
         width: 25, 
         height: 8,
         initialProps: {
-            fontSize: 20 // Slightly smaller default for direct add
+            fontSize: 20 
         }
       };
       addElement('text', undefined, textElementOptions);
@@ -254,7 +256,7 @@ export function CanvasArea({
     const resizeHandle = isSelected && (
       <div
         onMouseDown={(e) => handleResizeHandleMouseDown(e, element)}
-        onClick={(e) => e.stopPropagation()} // Prevent selecting canvas when clicking handle
+        onClick={(e) => e.stopPropagation()} 
         style={{
           position: 'absolute',
           bottom: '-4px',
@@ -265,7 +267,7 @@ export function CanvasArea({
           border: '1px solid hsl(var(--background))',
           borderRadius: '50%',
           cursor: 'nwse-resize',
-          zIndex: 100, // Ensure handle is on top
+          zIndex: 100, 
         }}
         data-ai-hint="resize handle"
       />
@@ -274,7 +276,6 @@ export function CanvasArea({
     if (element.type === 'text') {
       const textEl = element as TextElement;
 
-      // Common styles for both display div and textarea
       const commonTextStyles: React.CSSProperties = {
         width: '100%',
         height: '100%',
@@ -291,25 +292,23 @@ export function CanvasArea({
           `${textEl.shadowOffsetX || 0}px ${textEl.shadowOffsetY || 0}px ${textEl.shadowBlur || 0}px ${textEl.shadowColor}`
           : 'none',
         boxSizing: 'border-box',
-        padding: '2px', // Consistent padding
+        padding: '2px', 
       };
       
       return (
-        <div // Main draggable, resizable, positionable div
+        <div 
           key={element.id}
           style={{
             ...baseStyle,
             ...interactionStyle,
           }}
           onMouseDown={(e) => handleElementMouseDown(e, element)}
-          onClick={(e) => { // Ensures selection logic fires correctly
+          onClick={(e) => { 
             e.stopPropagation();
             selectElement(element.id);
           }}
           onDoubleClick={(e) => {
-             e.stopPropagation(); // Prevent canvas double click
-             // If already selected, focusing is handled by EditableTextarea
-             // If not selected, selectElement in onClick will handle it
+             e.stopPropagation(); 
           }}
           data-ai-hint="text content block"
         >
@@ -320,7 +319,7 @@ export function CanvasArea({
               styleProps={commonTextStyles}
             />
           ) : (
-            <div // Display-only div
+            <div 
               style={{
                 ...commonTextStyles,
                 display: 'flex',
@@ -328,10 +327,10 @@ export function CanvasArea({
                 alignItems: 'center',
                 whiteSpace: 'pre-wrap',
                 wordBreak: 'break-word',
-                overflow: 'hidden', // Prevent text spill from display div
+                overflow: 'hidden', 
               }}
             >
-              {textEl.content || ""} {/* Ensure content is not undefined */}
+              {textEl.content || ""} 
             </div>
           )}
           {resizeHandle}
@@ -355,13 +354,13 @@ export function CanvasArea({
            : 'none',
         filter: imgEl.filterBlur && imgEl.filterBlur > 0 ? `blur(${imgEl.filterBlur}px)` : 'none',
        };
-       if (isSelected && imageContainerStyle.border === '1px solid transparent') { // Default transparent border from baseStyle
+       if (isSelected && imageContainerStyle.border === '1px solid transparent') { 
         imageContainerStyle.border = '2px dashed hsl(var(--primary))';
-       } else if (isSelected && (!imgEl.borderWidth || imgEl.borderWidth === 0)) { // No custom border, apply dashed
+       } else if (isSelected && (!imgEl.borderWidth || imgEl.borderWidth === 0)) { 
          imageContainerStyle.border = '2px dashed hsl(var(--primary))';
-       } else if (isSelected && imgEl.borderWidth && imgEl.borderWidth > 0) { // Has custom border, use outline
+       } else if (isSelected && imgEl.borderWidth && imgEl.borderWidth > 0) { 
         imageContainerStyle.outline = '2px dashed hsl(var(--primary))';
-        imageContainerStyle.outlineOffset = `${imgEl.borderWidth +1}px`; // ensure outline is outside border
+        imageContainerStyle.outlineOffset = `${imgEl.borderWidth +1}px`; 
        }
 
 
@@ -380,8 +379,8 @@ export function CanvasArea({
               width: '100%',
               height: '100%',
               objectFit: imgEl.objectFit,
-              pointerEvents: 'none', // Image itself should not capture mouse events meant for the div
-              borderRadius: imgEl.borderRadius ? `${imgEl.borderRadius}px` : '0px', // Apply to img for objectFit compatibility
+              pointerEvents: 'none', 
+              borderRadius: imgEl.borderRadius ? `${imgEl.borderRadius}px` : '0px', 
             }}
             draggable={false}
           />
@@ -429,10 +428,11 @@ export function CanvasArea({
   return (
     <div
         className="flex-1 flex items-center justify-center p-6 bg-muted/40 overflow-auto"
-        onClick={handleCanvasClick} // For deselecting elements
-        onDoubleClick={handleCanvasDoubleClick} // For adding text on canvas
+        onClick={handleCanvasClick} 
+        onDoubleClick={handleCanvasDoubleClick} 
     >
       <Card
+        id="exportable-canvas-container" 
         className="aspect-[16/9] w-full max-w-4xl shadow-2xl overflow-hidden relative"
         style={{
           maxWidth: 'min(calc(100vh * 16 / 9 * 0.8), 100%)',
@@ -445,7 +445,7 @@ export function CanvasArea({
       >
         <div
             id="thumbnail-canvas"
-            ref={canvasRef} // Ref on the direct child that represents the 100%x100% canvas area
+            ref={canvasRef} 
             className="w-full h-full relative"
             data-ai-hint="youtube thumbnail design canvas"
         >

@@ -1,12 +1,14 @@
 
 "use client";
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { ElementsSidebar } from '@/components/thumbnail-maker/elements-sidebar';
 import { CanvasArea } from '@/components/thumbnail-maker/canvas-area';
 import { PropertiesSidebar } from '@/components/thumbnail-maker/properties-sidebar';
-import { Youtube } from 'lucide-react';
+import { Youtube, Download, FileXIcon } from 'lucide-react';
 import type { CanvasElement, ElementType, TextElement, ImageElement, ShapeElement, ShapeType } from '@/types/canvas';
+import { Button } from '@/components/ui/button';
+import html2canvas from 'html2canvas';
 
 export interface AddElementOptions {
   x?: number;
@@ -16,10 +18,12 @@ export interface AddElementOptions {
   initialProps?: Partial<CanvasElement>;
 }
 
+const DEFAULT_BACKGROUND_COLOR = '#FFFFFF';
+
 export default function ThumbnailMakerLayout() {
   const [elements, setElements] = useState<CanvasElement[]>([]);
   const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
-  const [canvasBackgroundColor, setCanvasBackgroundColor] = useState<string>('#FFFFFF');
+  const [canvasBackgroundColor, setCanvasBackgroundColor] = useState<string>(DEFAULT_BACKGROUND_COLOR);
   const [canvasBackgroundImage, setCanvasBackgroundImage] = useState<string | null>(null);
 
   const addElement = useCallback((
@@ -59,23 +63,23 @@ export default function ThumbnailMakerLayout() {
     }
 
 
-    const baseProps: Partial<CanvasElement> = { // Make baseProps partial to allow initialProps to fully override
+    const baseProps: Partial<CanvasElement> = { 
       id: newId,
       x: posX,
       y: posY,
       width: elementWidth,
       height: elementHeight,
       rotation: 0,
+      ...options?.initialProps 
     };
 
     let newElement: CanvasElement;
 
     if (type === 'text') {
       newElement = {
-        ...baseProps, // Spread baseProps first
         type: 'text',
         content: 'New Text',
-        fontSize: 24,
+        fontSize: options?.initialProps?.fontSize || 24,
         fontFamily: 'PT Sans',
         color: '#333333',
         textAlign: 'left',
@@ -87,12 +91,12 @@ export default function ThumbnailMakerLayout() {
         shadowOffsetX: 0,
         shadowOffsetY: 0,
         shadowBlur: 0,
-        shadowColor: '#00000000', // Default transparent shadow
-        ...options?.initialProps, // Then spread initialProps to override anything from base or defaults
+        shadowColor: '#00000000',
+        ...baseProps, // Spread baseProps to ensure ID, position, dimensions, rotation are set
+        ...options?.initialProps, // Spread initialProps again to override any text-specific defaults if needed
       } as TextElement;
     } else if (type === 'image') {
       newElement = {
-        ...baseProps,
         type: 'image',
         src: 'https://placehold.co/400x300.png',
         alt: 'Placeholder Image',
@@ -107,11 +111,11 @@ export default function ThumbnailMakerLayout() {
         shadowColor: '#00000000',
         'data-ai-hint': 'abstract background',
         filterBlur: 0,
+        ...baseProps,
         ...options?.initialProps,
       } as ImageElement;
     } else if (type === 'shape' && shapeType === 'rectangle') {
       newElement = {
-        ...baseProps,
         type: 'shape',
         shapeType: 'rectangle',
         fillColor: '#CCCCCC',
@@ -124,6 +128,7 @@ export default function ThumbnailMakerLayout() {
         shadowSpreadRadius: 0,
         shadowColor: '#00000000',
         filterBlur: 0,
+        ...baseProps,
         ...options?.initialProps,
       } as ShapeElement;
     }
@@ -219,14 +224,71 @@ export default function ThumbnailMakerLayout() {
     });
   }, []);
 
+  const handleExport = useCallback(async (format: 'png' | 'jpeg') => {
+    const elementToCapture = document.getElementById('exportable-canvas-container');
+    if (!elementToCapture) {
+      console.error('Canvas element not found for export.');
+      return;
+    }
+
+    // Temporarily deselect element to hide selection border during export
+    const currentSelectedId = selectedElementId;
+    setSelectedElementId(null);
+    
+    // Give React a moment to re-render without selection
+    await new Promise(resolve => setTimeout(resolve, 50));
+
+
+    html2canvas(elementToCapture, { 
+        useCORS: true, 
+        logging: false,
+        scale: 2, // Capture at higher resolution for better quality
+        // backgroundColor: null // Let html2canvas pick up background from the element itself
+     }).then(canvas => {
+      const image = canvas.toDataURL(`image/${format}`, format === 'jpeg' ? 0.9 : 1.0);
+      const link = document.createElement('a');
+      link.download = `thumbnail.${format}`;
+      link.href = image;
+      link.click();
+      document.body.removeChild(link); // Clean up the link
+    }).catch(err => {
+        console.error('Error exporting canvas:', err);
+    }).finally(() => {
+        // Reselect the element if it was selected
+        if (currentSelectedId) {
+            setSelectedElementId(currentSelectedId);
+        }
+    });
+  }, [selectedElementId, canvasBackgroundColor, canvasBackgroundImage]);
+
+
+  const handleClearCanvas = useCallback(() => {
+    setElements([]);
+    setSelectedElementId(null);
+    setCanvasBackgroundColor(DEFAULT_BACKGROUND_COLOR);
+    setCanvasBackgroundImage(null);
+  }, []);
+
+
   const selectedElement = elements.find((el) => el.id === selectedElementId) || null;
 
   return (
     <div className="flex flex-col h-screen bg-background text-foreground">
-      <header className="h-16 border-b bg-card flex items-center px-6 shadow-sm">
+      <header className="h-16 border-b bg-card flex items-center justify-between px-6 shadow-sm">
         <div className="flex items-center gap-2">
           <Youtube className="h-7 w-7 text-primary" />
           <h1 className="text-xl font-semibold font-headline">YouTube Thumbnail Maker</h1>
+        </div>
+        <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => handleExport('png')} data-ai-hint="save png button">
+                <Download className="mr-2 h-4 w-4" /> Save as PNG
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => handleExport('jpeg')} data-ai-hint="save jpg button">
+                <Download className="mr-2 h-4 w-4" /> Save as JPG
+            </Button>
+            <Button variant="destructive" size="sm" onClick={handleClearCanvas} data-ai-hint="clear canvas button">
+                <FileXIcon className="mr-2 h-4 w-4" /> Clear Canvas
+            </Button>
         </div>
       </header>
       <main className="flex flex-1 overflow-hidden">
@@ -245,7 +307,7 @@ export default function ThumbnailMakerLayout() {
           updateElement={updateElement}
           canvasBackgroundColor={canvasBackgroundColor}
           canvasBackgroundImage={canvasBackgroundImage}
-          addElement={addElement} // Pass addElement here
+          addElement={addElement}
         />
         <PropertiesSidebar
           elements={elements}
