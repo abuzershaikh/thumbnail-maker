@@ -35,6 +35,11 @@ export default function ThumbnailMakerLayout() {
         fontFamily: 'PT Sans',
         color: '#333333',
         textAlign: 'left',
+        fontWeight: 'normal',
+        fontStyle: 'normal',
+        textDecoration: 'none',
+        letterSpacing: 0, // px
+        lineHeight: 1.2, // unitless multiplier
       } as TextElement;
     } else if (type === 'image') {
       newElement = {
@@ -43,6 +48,7 @@ export default function ThumbnailMakerLayout() {
         src: 'https://placehold.co/400x300.png',
         alt: 'Placeholder Image',
         objectFit: 'cover',
+        'data-ai-hint': 'abstract background',
       } as ImageElement;
     } else {
       return; 

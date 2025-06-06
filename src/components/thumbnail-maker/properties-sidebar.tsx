@@ -10,7 +10,7 @@ import { Slider } from '@/components/ui/slider';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { LayersIcon, PaletteIcon, AlignCenterIcon, TypeIcon, ImagePlayIcon, Settings2Icon, RotateCcwIcon, Trash2Icon, EyeIcon, EyeOffIcon } from 'lucide-react';
+import { LayersIcon, PaletteIcon, TypeIcon, ImagePlayIcon, Settings2Icon, RotateCcwIcon, Trash2Icon, CaseSensitiveIcon,PilcrowIcon, CombineIcon, UnderlineIcon, StrikethroughIcon, BoldIcon, ItalicIcon } from 'lucide-react';
 import type { CanvasElement, TextElement, ImageElement } from '@/types/canvas';
 
 interface PropertiesSidebarProps {
@@ -23,13 +23,18 @@ interface PropertiesSidebarProps {
 
 export function PropertiesSidebar({ elements, selectedElement, updateElement, deleteElement, selectElement }: PropertiesSidebarProps) {
 
-  const handleInputChange = (property: keyof CanvasElement, value: any) => {
+  const handleInputChange = (property: keyof CanvasElement | keyof TextElement | keyof ImageElement, value: any) => {
     if (selectedElement) {
-      updateElement(selectedElement.id, { [property]: value });
+        if (typeof value === 'string' && (property === 'letterSpacing' || property === 'lineHeight')) {
+            const numValue = parseFloat(value);
+            updateElement(selectedElement.id, { [property]: isNaN(numValue) ? 0 : numValue });
+        } else {
+            updateElement(selectedElement.id, { [property]: value });
+        }
     }
   };
 
-  const handleSliderChange = (property: keyof CanvasElement, value: number[]) => {
+  const handleSliderChange = (property: keyof CanvasElement | keyof TextElement, value: number[]) => {
     if (selectedElement) {
       updateElement(selectedElement.id, { [property]: value[0] });
     }
@@ -95,23 +100,112 @@ export function PropertiesSidebar({ elements, selectedElement, updateElement, de
           value={element.fontFamily}
           onChange={(e) => handleInputChange('fontFamily', e.target.value)}
           className="h-8 text-xs"
+          placeholder="e.g., Arial, PT Sans"
         />
       </div>
+      <div className="grid grid-cols-2 gap-2">
+        <div className="space-y-1">
+            <Label htmlFor="text-align" className="text-xs">Align</Label>
+            <Select
+            value={element.textAlign}
+            onValueChange={(value: 'left' | 'center' | 'right') => handleInputChange('textAlign', value)}
+            >
+            <SelectTrigger className="h-8 text-xs">
+                <SelectValue placeholder="Alignment" />
+            </SelectTrigger>
+            <SelectContent>
+                <SelectItem value="left">Left</SelectItem>
+                <SelectItem value="center">Center</SelectItem>
+                <SelectItem value="right">Right</SelectItem>
+            </SelectContent>
+            </Select>
+        </div>
+        <div className="space-y-1">
+            <Label htmlFor="font-weight" className="text-xs flex items-center gap-1"><BoldIcon className="h-3 w-3" />Weight</Label>
+            <Select
+            value={element.fontWeight}
+            onValueChange={(value: 'normal' | 'bold') => handleInputChange('fontWeight', value)}
+            >
+            <SelectTrigger className="h-8 text-xs">
+                <SelectValue placeholder="Weight" />
+            </SelectTrigger>
+            <SelectContent>
+                <SelectItem value="normal">Normal</SelectItem>
+                <SelectItem value="bold">Bold</SelectItem>
+            </SelectContent>
+            </Select>
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+         <div className="space-y-1">
+            <Label htmlFor="font-style" className="text-xs flex items-center gap-1"><ItalicIcon className="h-3 w-3" />Style</Label>
+            <Select
+            value={element.fontStyle}
+            onValueChange={(value: 'normal' | 'italic') => handleInputChange('fontStyle', value)}
+            >
+            <SelectTrigger className="h-8 text-xs">
+                <SelectValue placeholder="Style" />
+            </SelectTrigger>
+            <SelectContent>
+                <SelectItem value="normal">Normal</SelectItem>
+                <SelectItem value="italic">Italic</SelectItem>
+            </SelectContent>
+            </Select>
+        </div>
+        <div className="space-y-1">
+            <Label htmlFor="text-decoration" className="text-xs flex items-center gap-1"><UnderlineIcon className="h-3 w-3" />Decoration</Label>
+            <Select
+            value={element.textDecoration}
+            onValueChange={(value: 'none' | 'underline' | 'line-through') => handleInputChange('textDecoration', value)}
+            >
+            <SelectTrigger className="h-8 text-xs">
+                <SelectValue placeholder="Decoration" />
+            </SelectTrigger>
+            <SelectContent>
+                <SelectItem value="none">None</SelectItem>
+                <SelectItem value="underline">Underline</SelectItem>
+                <SelectItem value="line-through">Strikethrough</SelectItem>
+            </SelectContent>
+            </Select>
+        </div>
+      </div>
       <div className="space-y-1">
-        <Label htmlFor="text-align" className="text-xs">Text Align</Label>
-        <Select
-          value={element.textAlign}
-          onValueChange={(value: 'left' | 'center' | 'right') => handleInputChange('textAlign', value)}
-        >
-          <SelectTrigger className="h-8 text-xs">
-            <SelectValue placeholder="Alignment" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="left">Left</SelectItem>
-            <SelectItem value="center">Center</SelectItem>
-            <SelectItem value="right">Right</SelectItem>
-          </SelectContent>
-        </Select>
+        <Label htmlFor="letter-spacing" className="text-xs flex items-center gap-1"><CaseSensitiveIcon className="h-3 w-3" />Letter Spacing (px)</Label>
+        <Input 
+          id="letter-spacing" 
+          type="number"
+          value={element.letterSpacing}
+          onChange={(e) => handleInputChange('letterSpacing', e.target.value)}
+          className="h-8 text-xs"
+          step="0.1"
+        />
+        <Slider 
+          value={[element.letterSpacing]} 
+          min={-5}
+          max={20} 
+          step={0.1} 
+          onValueChange={(value) => handleSliderChange('letterSpacing', value)}
+          className="mt-1"
+        />
+      </div>
+       <div className="space-y-1">
+        <Label htmlFor="line-height" className="text-xs flex items-center gap-1"><PilcrowIcon className="h-3 w-3" />Line Height</Label>
+        <Input 
+          id="line-height" 
+          type="number"
+          value={element.lineHeight}
+          onChange={(e) => handleInputChange('lineHeight', e.target.value)}
+          className="h-8 text-xs"
+          step="0.1"
+        />
+        <Slider 
+          value={[element.lineHeight]} 
+          min={0.8}
+          max={3} 
+          step={0.1} 
+          onValueChange={(value) => handleSliderChange('lineHeight', value)}
+          className="mt-1"
+        />
       </div>
     </div>
   );
@@ -127,6 +221,7 @@ export function PropertiesSidebar({ elements, selectedElement, updateElement, de
           onChange={(e) => handleInputChange('src', e.target.value)}
           placeholder="Enter image URL" 
           className="h-8 text-xs" 
+          disabled={element.src.startsWith('data:')}
         />
       </div>
        <div className="space-y-1">
@@ -140,7 +235,7 @@ export function PropertiesSidebar({ elements, selectedElement, updateElement, de
         />
       </div>
       <div className="space-y-1">
-        <Label htmlFor="object-fit" className="text-xs">Object Fit</Label>
+        <Label htmlFor="object-fit" className="text-xs flex items-center gap-1"><CombineIcon className="h-3 w-3" />Object Fit</Label>
         <Select
           value={element.objectFit}
           onValueChange={(value: 'cover' | 'contain' | 'fill' | 'none' | 'scale-down') => handleInputChange('objectFit', value)}
@@ -240,10 +335,6 @@ export function PropertiesSidebar({ elements, selectedElement, updateElement, de
               >
                 <span className="truncate flex-1" title={getLayerName(element)}>{getLayerName(element)}</span>
                 <div className="flex items-center gap-1 pl-2">
-                  {/* Placeholder for visibility toggle - future feature */}
-                  {/* <Button variant="ghost" size="icon" className="h-6 w-6">
-                    <EyeIcon className="h-3 w-3" />
-                  </Button> */}
                   <Button 
                     variant="ghost" 
                     size="icon" 

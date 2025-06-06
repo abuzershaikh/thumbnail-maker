@@ -137,8 +137,6 @@ export function CanvasArea({ elements, selectedElementId, selectElement, updateE
 
 
   const handleCanvasClick = (e: React.MouseEvent) => {
-    // Only deselect if clicking directly on the canvas background
-    // and not initiating a drag/resize.
     if (e.target === canvasRef.current && !draggingState) { 
         selectElement(null);
     }
@@ -170,14 +168,19 @@ export function CanvasArea({ elements, selectedElementId, selectElement, updateE
       const textStyle: React.CSSProperties = {
         ...baseStyle,
         ...interactionStyle,
-        fontSize: `${textEl.fontSize}px`, // Note: This fontSize is absolute but scales with the element % height. Consider relative font size if needed.
+        fontSize: `${textEl.fontSize}px`, 
         fontFamily: textEl.fontFamily,
         color: textEl.color,
         textAlign: textEl.textAlign,
+        fontWeight: textEl.fontWeight,
+        fontStyle: textEl.fontStyle,
+        textDecoration: textEl.textDecoration,
+        letterSpacing: `${textEl.letterSpacing}px`,
+        lineHeight: textEl.lineHeight,
         display: 'flex',
-        alignItems: 'center',
+        alignItems: 'center', // Better vertical alignment for multi-line text
         justifyContent: textEl.textAlign === 'left' ? 'flex-start' : textEl.textAlign === 'right' ? 'flex-end' : 'center',
-        padding: '2px', // Small padding for text elements
+        padding: '2px', 
         whiteSpace: 'pre-wrap', 
         wordBreak: 'break-word', 
       };
@@ -187,6 +190,7 @@ export function CanvasArea({ elements, selectedElementId, selectElement, updateE
           style={textStyle} 
           onMouseDown={(e) => handleElementMouseDown(e, element)}
           onClick={(e) => e.stopPropagation()} 
+          data-ai-hint="text content block"
         >
           {textEl.content}
           {isSelected && (
@@ -270,16 +274,16 @@ export function CanvasArea({ elements, selectedElementId, selectElement, updateE
       <Card 
         className="aspect-[16/9] w-full max-w-4xl shadow-2xl overflow-hidden relative"
         style={{ 
-          maxWidth: 'min(calc(100vh * 16 / 9 * 0.8), 100%)', // Adjust max width to maintain aspect ratio within viewport constraints
-          maxHeight: 'calc(100vh * 0.8)', // Limit height to 80% of viewport height
-          backgroundColor: canvasBackgroundColor, // Apply background color here for the card itself
+          maxWidth: 'min(calc(100vh * 16 / 9 * 0.8), 100%)', 
+          maxHeight: 'calc(100vh * 0.8)', 
+          backgroundColor: canvasBackgroundColor, 
         }}
       >
         <div 
             id="thumbnail-canvas" 
             ref={canvasRef}
-            className="w-full h-full relative" // Ensure bg is transparent here if card has it, or set it here
-            style={{ backgroundColor: canvasBackgroundColor }} // Explicitly set on the direct canvas div too
+            className="w-full h-full relative" 
+            style={{ backgroundColor: canvasBackgroundColor }} 
             data-ai-hint="youtube thumbnail design canvas"
         >
           {elements.length === 0 && (

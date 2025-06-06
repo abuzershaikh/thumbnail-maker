@@ -18,6 +18,11 @@ export interface TextElement extends BaseElement {
   fontFamily: string;
   color: string;
   textAlign: 'left' | 'center' | 'right';
+  fontWeight: 'normal' | 'bold';
+  fontStyle: 'normal' | 'italic';
+  textDecoration: 'none' | 'underline' | 'line-through';
+  letterSpacing: number; // in px
+  lineHeight: number; // unitless multiplier, e.g., 1.2
 }
 
 export interface ImageElement extends BaseElement {
