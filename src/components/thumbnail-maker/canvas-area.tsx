@@ -16,15 +16,15 @@ interface CanvasAreaProps {
 interface DraggingState {
   elementId: string;
   action: 'move' | 'resize';
-  initialMouseX: number; 
-  initialMouseY: number; 
-  initialElementX: number; 
-  initialElementY: number; 
-  initialElementWidth?: number; 
-  initialElementHeight?: number; 
+  initialMouseX: number;
+  initialMouseY: number;
+  initialElementX: number;
+  initialElementY: number;
+  initialElementWidth?: number;
+  initialElementHeight?: number;
 }
 
-const MIN_ELEMENT_SIZE_PERCENT = 5; 
+const MIN_ELEMENT_SIZE_PERCENT = 5;
 
 export function CanvasArea({ elements, selectedElementId, selectElement, updateElement, canvasBackgroundColor }: CanvasAreaProps) {
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -55,8 +55,8 @@ export function CanvasArea({ elements, selectedElementId, selectElement, updateE
     element: CanvasElement
   ) => {
     e.preventDefault();
-    e.stopPropagation(); 
-    selectElement(element.id); 
+    e.stopPropagation();
+    selectElement(element.id);
 
     if (!canvasRef.current) return;
 
@@ -84,7 +84,7 @@ export function CanvasArea({ elements, selectedElementId, selectElement, updateE
 
       const deltaMouseX = e.clientX - draggingState.initialMouseX;
       const deltaMouseY = e.clientY - draggingState.initialMouseY;
-      
+
       const currentElement = elements.find(el => el.id === draggingState.elementId);
       if (!currentElement) return;
 
@@ -97,7 +97,7 @@ export function CanvasArea({ elements, selectedElementId, selectElement, updateE
 
         newX = Math.max(0, Math.min(newX, 100 - currentElement.width));
         newY = Math.max(0, Math.min(newY, 100 - currentElement.height));
-        
+
         newX = isNaN(newX) ? draggingState.initialElementX : newX;
         newY = isNaN(newY) ? draggingState.initialElementY : newY;
 
@@ -109,13 +109,13 @@ export function CanvasArea({ elements, selectedElementId, selectElement, updateE
 
         newWidth = Math.max(MIN_ELEMENT_SIZE_PERCENT, newWidth);
         newHeight = Math.max(MIN_ELEMENT_SIZE_PERCENT, newHeight);
-        
+
         newWidth = Math.min(newWidth, 100 - currentElement.x);
         newHeight = Math.min(newHeight, 100 - currentElement.y);
 
         newWidth = isNaN(newWidth) ? draggingState.initialElementWidth : newWidth;
         newHeight = isNaN(newHeight) ? draggingState.initialElementHeight : newHeight;
-        
+
         updateElement(draggingState.elementId, { width: newWidth, height: newHeight });
       }
     };
@@ -137,7 +137,7 @@ export function CanvasArea({ elements, selectedElementId, selectElement, updateE
 
 
   const handleCanvasClick = (e: React.MouseEvent) => {
-    if (e.target === canvasRef.current && !draggingState) { 
+    if (e.target === canvasRef.current && !draggingState) {
         selectElement(null);
     }
   };
@@ -156,7 +156,7 @@ export function CanvasArea({ elements, selectedElementId, selectElement, updateE
       transform: `rotate(${element.rotation}deg)`,
       border: isSelected ? '2px dashed hsl(var(--primary))' : '1px solid transparent',
       boxSizing: 'border-box',
-      overflow: 'hidden', 
+      overflow: 'hidden',
     };
 
     const interactionStyle: React.CSSProperties = {
@@ -168,7 +168,7 @@ export function CanvasArea({ elements, selectedElementId, selectElement, updateE
       const textStyle: React.CSSProperties = {
         ...baseStyle,
         ...interactionStyle,
-        fontSize: `${textEl.fontSize}px`, 
+        fontSize: `${textEl.fontSize}px`,
         fontFamily: textEl.fontFamily,
         color: textEl.color,
         textAlign: textEl.textAlign,
@@ -180,16 +180,16 @@ export function CanvasArea({ elements, selectedElementId, selectElement, updateE
         display: 'flex',
         alignItems: 'center', // Better vertical alignment for multi-line text
         justifyContent: textEl.textAlign === 'left' ? 'flex-start' : textEl.textAlign === 'right' ? 'flex-end' : 'center',
-        padding: '2px', 
-        whiteSpace: 'pre-wrap', 
-        wordBreak: 'break-word', 
+        padding: '2px',
+        whiteSpace: 'pre-wrap',
+        wordBreak: 'break-word',
       };
       return (
-        <div 
-          key={element.id} 
-          style={textStyle} 
+        <div
+          key={element.id}
+          style={textStyle}
           onMouseDown={(e) => handleElementMouseDown(e, element)}
-          onClick={(e) => e.stopPropagation()} 
+          onClick={(e) => e.stopPropagation()}
           data-ai-hint="text content block"
         >
           {textEl.content}
@@ -207,7 +207,7 @@ export function CanvasArea({ elements, selectedElementId, selectElement, updateE
                 border: '1px solid hsl(var(--background))',
                 borderRadius: '50%',
                 cursor: 'nwse-resize',
-                zIndex: 100, 
+                zIndex: 100,
               }}
               data-ai-hint="resize handle"
             />
@@ -224,23 +224,25 @@ export function CanvasArea({ elements, selectedElementId, selectElement, updateE
          display: 'flex',
          justifyContent: 'center',
          alignItems: 'center',
+         borderRadius: imgEl.borderRadius ? `${imgEl.borderRadius}px` : '0px',
        };
       return (
-        <div 
-          key={element.id} 
-          style={imageContainerStyle} 
+        <div
+          key={element.id}
+          style={imageContainerStyle}
           onMouseDown={(e) => handleElementMouseDown(e, element)}
-          onClick={(e) => e.stopPropagation()} 
+          onClick={(e) => e.stopPropagation()}
           data-ai-hint={imgEl.src.startsWith('data:') ? 'uploaded image' : 'placeholder image'}
         >
-          <img 
-            src={imgEl.src} 
-            alt={imgEl.alt || 'Canvas image'} 
-            style={{ 
-              width: '100%', 
-              height: '100%', 
+          <img
+            src={imgEl.src}
+            alt={imgEl.alt || 'Canvas image'}
+            style={{
+              width: '100%',
+              height: '100%',
               objectFit: imgEl.objectFit,
-              pointerEvents: 'none', 
+              pointerEvents: 'none',
+              // borderRadius: imgEl.borderRadius ? `${imgEl.borderRadius}px` : '0px', // Apply to image if container overflow is not hidden
             }}
             draggable={false}
           />
@@ -271,19 +273,19 @@ export function CanvasArea({ elements, selectedElementId, selectElement, updateE
 
   return (
     <div className="flex-1 flex items-center justify-center p-6 bg-muted/40 overflow-auto" onClick={handleCanvasClick}>
-      <Card 
+      <Card
         className="aspect-[16/9] w-full max-w-4xl shadow-2xl overflow-hidden relative"
-        style={{ 
-          maxWidth: 'min(calc(100vh * 16 / 9 * 0.8), 100%)', 
-          maxHeight: 'calc(100vh * 0.8)', 
-          backgroundColor: canvasBackgroundColor, 
+        style={{
+          maxWidth: 'min(calc(100vh * 16 / 9 * 0.8), 100%)',
+          maxHeight: 'calc(100vh * 0.8)',
+          backgroundColor: canvasBackgroundColor,
         }}
       >
-        <div 
-            id="thumbnail-canvas" 
+        <div
+            id="thumbnail-canvas"
             ref={canvasRef}
-            className="w-full h-full relative" 
-            style={{ backgroundColor: canvasBackgroundColor }} 
+            className="w-full h-full relative"
+            style={{ backgroundColor: canvasBackgroundColor }}
             data-ai-hint="youtube thumbnail design canvas"
         >
           {elements.length === 0 && (

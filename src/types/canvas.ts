@@ -30,6 +30,7 @@ export interface ImageElement extends BaseElement {
   src: string;
   alt?: string;
   objectFit: 'cover' | 'contain' | 'fill' | 'none' | 'scale-down';
+  borderRadius?: number; // in pixels
 }
 
 export type CanvasElement = TextElement | ImageElement;

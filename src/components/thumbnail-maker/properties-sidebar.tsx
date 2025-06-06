@@ -10,7 +10,7 @@ import { Slider } from '@/components/ui/slider';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { LayersIcon, PaletteIcon, TypeIcon, ImagePlayIcon, Settings2Icon, RotateCcwIcon, Trash2Icon, CaseSensitiveIcon,PilcrowIcon, CombineIcon, UnderlineIcon, StrikethroughIcon, BoldIcon, ItalicIcon } from 'lucide-react';
+import { LayersIcon, PaletteIcon, TypeIcon, ImagePlayIcon, Settings2Icon, RotateCcwIcon, Trash2Icon, CaseSensitiveIcon,PilcrowIcon, CombineIcon, UnderlineIcon, StrikethroughIcon, BoldIcon, ItalicIcon, CornerRadiusIcon } from 'lucide-react';
 import type { CanvasElement, TextElement, ImageElement } from '@/types/canvas';
 
 interface PropertiesSidebarProps {
@@ -21,11 +21,30 @@ interface PropertiesSidebarProps {
   selectElement: (id: string | null) => void;
 }
 
+// A simple CornerRadiusIcon as lucide-react might not have a direct one
+const CustomCornerRadiusIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    {...props}
+  >
+    <path d="M20 5S15 5 15 10H9S9 15 5 15" />
+  </svg>
+);
+
+
 export function PropertiesSidebar({ elements, selectedElement, updateElement, deleteElement, selectElement }: PropertiesSidebarProps) {
 
   const handleInputChange = (property: keyof CanvasElement | keyof TextElement | keyof ImageElement, value: any) => {
     if (selectedElement) {
-        if (typeof value === 'string' && (property === 'letterSpacing' || property === 'lineHeight')) {
+        if (typeof value === 'string' && (property === 'letterSpacing' || property === 'lineHeight' || property === 'borderRadius')) {
             const numValue = parseFloat(value);
             updateElement(selectedElement.id, { [property]: isNaN(numValue) ? 0 : numValue });
         } else {
@@ -34,7 +53,7 @@ export function PropertiesSidebar({ elements, selectedElement, updateElement, de
     }
   };
 
-  const handleSliderChange = (property: keyof CanvasElement | keyof TextElement, value: number[]) => {
+  const handleSliderChange = (property: keyof CanvasElement | keyof TextElement | keyof ImageElement, value: number[]) => {
     if (selectedElement) {
       updateElement(selectedElement.id, { [property]: value[0] });
     }
@@ -58,45 +77,45 @@ export function PropertiesSidebar({ elements, selectedElement, updateElement, de
       <h4 className="font-medium text-sm flex items-center gap-2"><TypeIcon className="h-4 w-4" /> Text Properties</h4>
       <div className="space-y-1">
         <Label htmlFor="text-content" className="text-xs">Content</Label>
-        <Textarea 
-          id="text-content" 
-          value={element.content} 
+        <Textarea
+          id="text-content"
+          value={element.content}
           onChange={(e) => handleInputChange('content', e.target.value)}
-          placeholder="Enter text" 
-          className="h-20 text-xs" 
+          placeholder="Enter text"
+          className="h-20 text-xs"
         />
       </div>
       <div className="space-y-1">
         <Label htmlFor="font-size" className="text-xs">Font Size (px)</Label>
-        <Input 
-          id="font-size" 
+        <Input
+          id="font-size"
           type="number"
           value={element.fontSize}
           onChange={(e) => handleInputChange('fontSize', parseInt(e.target.value, 10) || 0)}
           className="h-8 text-xs"
         />
-        <Slider 
-          value={[element.fontSize]} 
-          max={128} 
-          step={1} 
+        <Slider
+          value={[element.fontSize]}
+          max={128}
+          step={1}
           onValueChange={(value) => handleSliderChange('fontSize', value)}
           className="mt-1"
         />
       </div>
       <div className="space-y-1">
         <Label htmlFor="text-color" className="text-xs">Color</Label>
-        <Input 
-          id="text-color" 
-          type="color" 
+        <Input
+          id="text-color"
+          type="color"
           value={element.color}
           onChange={(e) => handleInputChange('color', e.target.value)}
-          className="h-8 p-1" 
+          className="h-8 p-1"
         />
       </div>
       <div className="space-y-1">
         <Label htmlFor="font-family" className="text-xs">Font Family</Label>
-        <Input 
-          id="font-family" 
+        <Input
+          id="font-family"
           value={element.fontFamily}
           onChange={(e) => handleInputChange('fontFamily', e.target.value)}
           className="h-8 text-xs"
@@ -171,38 +190,38 @@ export function PropertiesSidebar({ elements, selectedElement, updateElement, de
       </div>
       <div className="space-y-1">
         <Label htmlFor="letter-spacing" className="text-xs flex items-center gap-1"><CaseSensitiveIcon className="h-3 w-3" />Letter Spacing (px)</Label>
-        <Input 
-          id="letter-spacing" 
+        <Input
+          id="letter-spacing"
           type="number"
           value={element.letterSpacing}
           onChange={(e) => handleInputChange('letterSpacing', e.target.value)}
           className="h-8 text-xs"
           step="0.1"
         />
-        <Slider 
-          value={[element.letterSpacing]} 
+        <Slider
+          value={[element.letterSpacing]}
           min={-5}
-          max={20} 
-          step={0.1} 
+          max={20}
+          step={0.1}
           onValueChange={(value) => handleSliderChange('letterSpacing', value)}
           className="mt-1"
         />
       </div>
        <div className="space-y-1">
         <Label htmlFor="line-height" className="text-xs flex items-center gap-1"><PilcrowIcon className="h-3 w-3" />Line Height</Label>
-        <Input 
-          id="line-height" 
+        <Input
+          id="line-height"
           type="number"
           value={element.lineHeight}
           onChange={(e) => handleInputChange('lineHeight', e.target.value)}
           className="h-8 text-xs"
           step="0.1"
         />
-        <Slider 
-          value={[element.lineHeight]} 
+        <Slider
+          value={[element.lineHeight]}
           min={0.8}
-          max={3} 
-          step={0.1} 
+          max={3}
+          step={0.1}
           onValueChange={(value) => handleSliderChange('lineHeight', value)}
           className="mt-1"
         />
@@ -215,23 +234,23 @@ export function PropertiesSidebar({ elements, selectedElement, updateElement, de
       <h4 className="font-medium text-sm flex items-center gap-2"><ImagePlayIcon className="h-4 w-4" /> Image Properties</h4>
       <div className="space-y-1">
         <Label htmlFor="image-src" className="text-xs">Source URL</Label>
-        <Input 
-          id="image-src" 
-          value={element.src} 
+        <Input
+          id="image-src"
+          value={element.src}
           onChange={(e) => handleInputChange('src', e.target.value)}
-          placeholder="Enter image URL" 
-          className="h-8 text-xs" 
+          placeholder="Enter image URL"
+          className="h-8 text-xs"
           disabled={element.src.startsWith('data:')}
         />
       </div>
        <div className="space-y-1">
         <Label htmlFor="image-alt" className="text-xs">Alt Text</Label>
-        <Input 
-          id="image-alt" 
-          value={element.alt || ''} 
+        <Input
+          id="image-alt"
+          value={element.alt || ''}
           onChange={(e) => handleInputChange('alt', e.target.value)}
-          placeholder="Enter alt text" 
-          className="h-8 text-xs" 
+          placeholder="Enter alt text"
+          className="h-8 text-xs"
         />
       </div>
       <div className="space-y-1">
@@ -251,6 +270,26 @@ export function PropertiesSidebar({ elements, selectedElement, updateElement, de
             <SelectItem value="scale-down">Scale Down</SelectItem>
           </SelectContent>
         </Select>
+      </div>
+      <div className="space-y-1">
+        <Label htmlFor="border-radius" className="text-xs flex items-center gap-1">
+          <CustomCornerRadiusIcon className="h-3 w-3" />Border Radius (px)
+        </Label>
+        <Input
+          id="border-radius"
+          type="number"
+          value={element.borderRadius || 0}
+          onChange={(e) => handleInputChange('borderRadius', parseInt(e.target.value, 10) || 0)}
+          className="h-8 text-xs"
+          min="0"
+        />
+        <Slider
+          value={[element.borderRadius || 0]}
+          max={100} // Max radius of 100px for now, can be adjusted
+          step={1}
+          onValueChange={(value) => handleSliderChange('borderRadius', value)}
+          className="mt-1"
+        />
       </div>
     </div>
   );
@@ -282,18 +321,18 @@ export function PropertiesSidebar({ elements, selectedElement, updateElement, de
         <Label htmlFor="rotation" className="text-xs flex items-center gap-1">
             <RotateCcwIcon className="h-3 w-3" /> Rotation (°)
         </Label>
-        <Input 
-          id="rotation" 
+        <Input
+          id="rotation"
           type="number"
           value={element.rotation}
           onChange={(e) => handleInputChange('rotation', parseInt(e.target.value, 10) || 0)}
           className="h-8 text-xs"
         />
-        <Slider 
-          value={[element.rotation]} 
+        <Slider
+          value={[element.rotation]}
           min={0}
-          max={360} 
-          step={1} 
+          max={360}
+          step={1}
           onValueChange={(value) => handleSliderChange('rotation', value)}
           className="mt-1"
         />
@@ -327,17 +366,17 @@ export function PropertiesSidebar({ elements, selectedElement, updateElement, de
           <div className="space-y-2">
             {/* Layers are rendered top-most first, so reverse for display */}
             {elements.slice().reverse().map((element) => (
-              <div 
-                key={element.id} 
+              <div
+                key={element.id}
                 className={`p-2 border rounded-md text-xs flex items-center justify-between cursor-pointer transition-colors
                             ${selectedElement?.id === element.id ? 'bg-primary/20 border-primary' : 'bg-card hover:bg-muted/50'}`}
                 onClick={() => selectElement(element.id)}
               >
                 <span className="truncate flex-1" title={getLayerName(element)}>{getLayerName(element)}</span>
                 <div className="flex items-center gap-1 pl-2">
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     className="h-6 w-6 hover:bg-destructive/20 hover:text-destructive"
                     onClick={(e) => { e.stopPropagation(); deleteElement(element.id); }}
                     title={`Delete ${element.type}`}

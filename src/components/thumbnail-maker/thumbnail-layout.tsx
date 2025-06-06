@@ -39,7 +39,7 @@ export default function ThumbnailMakerLayout() {
         fontStyle: 'normal',
         textDecoration: 'none',
         letterSpacing: 0, // px
-        lineHeight: 1.2, // unitless multiplier
+        lineHeight: 1.2, // unitless multiplier,
       } as TextElement;
     } else if (type === 'image') {
       newElement = {
@@ -48,10 +48,11 @@ export default function ThumbnailMakerLayout() {
         src: 'https://placehold.co/400x300.png',
         alt: 'Placeholder Image',
         objectFit: 'cover',
+        borderRadius: 0,
         'data-ai-hint': 'abstract background',
       } as ImageElement;
     } else {
-      return; 
+      return;
     }
 
     setElements((prevElements) => [...prevElements, newElement]);
@@ -67,10 +68,11 @@ export default function ThumbnailMakerLayout() {
       alt: 'Uploaded image',
       x: 10,
       y: 10,
-      width: 40, 
-      height: 30, 
+      width: 40,
+      height: 30,
       rotation: 0,
-      objectFit: 'contain', 
+      objectFit: 'contain',
+      borderRadius: 0,
     };
     setElements((prevElements) => [...prevElements, newElement]);
     setSelectedElementId(newId);
@@ -106,8 +108,8 @@ export default function ThumbnailMakerLayout() {
         </div>
       </header>
       <main className="flex flex-1 overflow-hidden">
-        <ElementsSidebar 
-          addElement={addElement} 
+        <ElementsSidebar
+          addElement={addElement}
           onImageUpload={handleImageUpload}
           setCanvasBackgroundColor={setCanvasBackgroundColor}
           canvasBackgroundColor={canvasBackgroundColor}
