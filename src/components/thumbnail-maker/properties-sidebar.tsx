@@ -9,15 +9,19 @@ import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { LayersIcon, PaletteIcon, AlignCenterIcon, TypeIcon, ImagePlayIcon, Settings2Icon, RotateCcwIcon } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { LayersIcon, PaletteIcon, AlignCenterIcon, TypeIcon, ImagePlayIcon, Settings2Icon, RotateCcwIcon, Trash2Icon, EyeIcon, EyeOffIcon } from 'lucide-react';
 import type { CanvasElement, TextElement, ImageElement } from '@/types/canvas';
 
 interface PropertiesSidebarProps {
+  elements: CanvasElement[];
   selectedElement: CanvasElement | null;
   updateElement: (id: string, updates: Partial<CanvasElement>) => void;
+  deleteElement: (id: string) => void;
+  selectElement: (id: string | null) => void;
 }
 
-export function PropertiesSidebar({ selectedElement, updateElement }: PropertiesSidebarProps) {
+export function PropertiesSidebar({ elements, selectedElement, updateElement, deleteElement, selectElement }: PropertiesSidebarProps) {
 
   const handleInputChange = (property: keyof CanvasElement, value: any) => {
     if (selectedElement) {
@@ -30,6 +34,19 @@ export function PropertiesSidebar({ selectedElement, updateElement }: Properties
       updateElement(selectedElement.id, { [property]: value[0] });
     }
   };
+  
+  const getLayerName = (element: CanvasElement): string => {
+    if (element.type === 'text') {
+      return `Text: ${(element as TextElement).content.substring(0, 20)}${(element as TextElement).content.length > 20 ? '...' : ''}`;
+    }
+    if (element.type === 'image') {
+      const src = (element as ImageElement).src;
+      if (src.startsWith('data:')) return 'Image: Uploaded';
+      return `Image: ${src.substring(src.lastIndexOf('/') + 1).substring(0,20)}...`;
+    }
+    return `Element: ${element.id.substring(0, 8)}`;
+  };
+
 
   const renderTextProperties = (element: TextElement) => (
     <div className="space-y-3 p-3 border rounded-md bg-muted/20">
@@ -54,7 +71,7 @@ export function PropertiesSidebar({ selectedElement, updateElement }: Properties
           className="h-8 text-xs"
         />
         <Slider 
-          defaultValue={[element.fontSize]} 
+          value={[element.fontSize]} 
           max={128} 
           step={1} 
           onValueChange={(value) => handleSliderChange('fontSize', value)}
@@ -209,18 +226,39 @@ export function PropertiesSidebar({ selectedElement, updateElement }: Properties
           <LayersIcon className="h-5 w-5 text-primary" /> Layers
         </CardTitle>
       </CardHeader>
-      <ScrollArea className="flex-[0.5]"> {/* Smaller fixed size for layers for now */}
+      <ScrollArea className="flex-[0.5_1_auto] min-h-[150px]"> {/* Allow layers panel to grow a bit */}
         <CardContent className="p-4">
-          <p className="text-sm text-muted-foreground">Layer management (read-only for now).</p>
-           <div className="mt-2 space-y-2">
-            {/* Placeholder for layers - TODO: Implement dynamic layer list */}
-            <div className="p-2 border rounded-md text-xs bg-card hover:bg-accent/10">Layer 1: Text Element</div>
-            <div className="p-2 border rounded-md text-xs bg-card hover:bg-accent/10">Layer 2: Image Element</div>
+          {elements.length === 0 && <p className="text-sm text-muted-foreground text-center">No layers yet.</p>}
+          <div className="space-y-2">
+            {/* Layers are rendered top-most first, so reverse for display */}
+            {elements.slice().reverse().map((element) => (
+              <div 
+                key={element.id} 
+                className={`p-2 border rounded-md text-xs flex items-center justify-between cursor-pointer transition-colors
+                            ${selectedElement?.id === element.id ? 'bg-primary/20 border-primary' : 'bg-card hover:bg-muted/50'}`}
+                onClick={() => selectElement(element.id)}
+              >
+                <span className="truncate flex-1" title={getLayerName(element)}>{getLayerName(element)}</span>
+                <div className="flex items-center gap-1 pl-2">
+                  {/* Placeholder for visibility toggle - future feature */}
+                  {/* <Button variant="ghost" size="icon" className="h-6 w-6">
+                    <EyeIcon className="h-3 w-3" />
+                  </Button> */}
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-6 w-6 hover:bg-destructive/20 hover:text-destructive"
+                    onClick={(e) => { e.stopPropagation(); deleteElement(element.id); }}
+                    title={`Delete ${element.type}`}
+                  >
+                    <Trash2Icon className="h-3 w-3" />
+                  </Button>
+                </div>
+              </div>
+            ))}
           </div>
         </CardContent>
       </ScrollArea>
     </Card>
   );
 }
-
-    

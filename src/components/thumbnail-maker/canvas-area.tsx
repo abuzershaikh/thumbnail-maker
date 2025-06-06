@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import type { CanvasElement, TextElement, ImageElement } from '@/types/canvas';
 
@@ -10,22 +10,23 @@ interface CanvasAreaProps {
   selectedElementId: string | null;
   selectElement: (id: string | null) => void;
   updateElement: (id: string, updates: Partial<CanvasElement>) => void;
+  canvasBackgroundColor: string;
 }
 
 interface DraggingState {
   elementId: string;
   action: 'move' | 'resize';
-  initialMouseX: number; // viewport clientX
-  initialMouseY: number; // viewport clientY
-  initialElementX: number; // percentage
-  initialElementY: number; // percentage
-  initialElementWidth?: number; // percentage, for resizing
-  initialElementHeight?: number; // percentage, for resizing
+  initialMouseX: number; 
+  initialMouseY: number; 
+  initialElementX: number; 
+  initialElementY: number; 
+  initialElementWidth?: number; 
+  initialElementHeight?: number; 
 }
 
-const MIN_ELEMENT_SIZE_PERCENT = 5; // Minimum 5% width/height
+const MIN_ELEMENT_SIZE_PERCENT = 5; 
 
-export function CanvasArea({ elements, selectedElementId, selectElement, updateElement }: CanvasAreaProps) {
+export function CanvasArea({ elements, selectedElementId, selectElement, updateElement, canvasBackgroundColor }: CanvasAreaProps) {
   const canvasRef = useRef<HTMLDivElement>(null);
   const [draggingState, setDraggingState] = useState<DraggingState | null>(null);
 
@@ -54,8 +55,8 @@ export function CanvasArea({ elements, selectedElementId, selectElement, updateE
     element: CanvasElement
   ) => {
     e.preventDefault();
-    e.stopPropagation(); // Prevent element move and canvas click
-    selectElement(element.id); // Ensure element is selected
+    e.stopPropagation(); 
+    selectElement(element.id); 
 
     if (!canvasRef.current) return;
 
@@ -109,7 +110,6 @@ export function CanvasArea({ elements, selectedElementId, selectElement, updateE
         newWidth = Math.max(MIN_ELEMENT_SIZE_PERCENT, newWidth);
         newHeight = Math.max(MIN_ELEMENT_SIZE_PERCENT, newHeight);
         
-        // Ensure element does not resize beyond canvas boundaries from its current position
         newWidth = Math.min(newWidth, 100 - currentElement.x);
         newHeight = Math.min(newHeight, 100 - currentElement.y);
 
@@ -136,8 +136,10 @@ export function CanvasArea({ elements, selectedElementId, selectElement, updateE
   }, [draggingState, elements, updateElement]);
 
 
-  const handleCanvasClick = () => {
-    if (!draggingState) { 
+  const handleCanvasClick = (e: React.MouseEvent) => {
+    // Only deselect if clicking directly on the canvas background
+    // and not initiating a drag/resize.
+    if (e.target === canvasRef.current && !draggingState) { 
         selectElement(null);
     }
   };
@@ -168,16 +170,16 @@ export function CanvasArea({ elements, selectedElementId, selectElement, updateE
       const textStyle: React.CSSProperties = {
         ...baseStyle,
         ...interactionStyle,
-        fontSize: `${textEl.fontSize}px`,
+        fontSize: `${textEl.fontSize}px`, // Note: This fontSize is absolute but scales with the element % height. Consider relative font size if needed.
         fontFamily: textEl.fontFamily,
         color: textEl.color,
         textAlign: textEl.textAlign,
         display: 'flex',
         alignItems: 'center',
-        justifyContent: textEl.textAlign,
-        padding: '2px',
-        whiteSpace: 'pre-wrap',
-        wordBreak: 'break-word',
+        justifyContent: textEl.textAlign === 'left' ? 'flex-start' : textEl.textAlign === 'right' ? 'flex-end' : 'center',
+        padding: '2px', // Small padding for text elements
+        whiteSpace: 'pre-wrap', 
+        wordBreak: 'break-word', 
       };
       return (
         <div 
@@ -201,7 +203,7 @@ export function CanvasArea({ elements, selectedElementId, selectElement, updateE
                 border: '1px solid hsl(var(--background))',
                 borderRadius: '50%',
                 cursor: 'nwse-resize',
-                zIndex: 100,
+                zIndex: 100, 
               }}
               data-ai-hint="resize handle"
             />
@@ -266,21 +268,25 @@ export function CanvasArea({ elements, selectedElementId, selectElement, updateE
   return (
     <div className="flex-1 flex items-center justify-center p-6 bg-muted/40 overflow-auto" onClick={handleCanvasClick}>
       <Card 
-        className="aspect-[16/9] w-full max-w-4xl bg-card shadow-2xl overflow-hidden relative"
+        className="aspect-[16/9] w-full max-w-4xl shadow-2xl overflow-hidden relative"
         style={{ 
-          maxWidth: 'min(calc(100vh * 16 / 9 * 0.8), 100%)',
-          maxHeight: 'calc(100vh * 0.8)' 
+          maxWidth: 'min(calc(100vh * 16 / 9 * 0.8), 100%)', // Adjust max width to maintain aspect ratio within viewport constraints
+          maxHeight: 'calc(100vh * 0.8)', // Limit height to 80% of viewport height
+          backgroundColor: canvasBackgroundColor, // Apply background color here for the card itself
         }}
       >
         <div 
             id="thumbnail-canvas" 
             ref={canvasRef}
-            className="w-full h-full bg-white relative"
+            className="w-full h-full relative" // Ensure bg is transparent here if card has it, or set it here
+            style={{ backgroundColor: canvasBackgroundColor }} // Explicitly set on the direct canvas div too
             data-ai-hint="youtube thumbnail design canvas"
         >
           {elements.length === 0 && (
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <p className="text-muted-foreground text-lg">Your Thumbnail Canvas (1280x720)</p>
+              <p className="text-muted-foreground text-lg" style={{color: canvasBackgroundColor === '#FFFFFF' || canvasBackgroundColor === '#FFF' || canvasBackgroundColor.toLowerCase() === '#ffffff' ? 'hsl(var(--muted-foreground))' : 'hsl(var(--background))'}}>
+                Your Thumbnail Canvas (1280x720)
+              </p>
             </div>
           )}
           {elements.map(renderElement)}

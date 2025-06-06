@@ -11,6 +11,7 @@ import type { CanvasElement, ElementType, TextElement, ImageElement } from '@/ty
 export default function ThumbnailMakerLayout() {
   const [elements, setElements] = useState<CanvasElement[]>([]);
   const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
+  const [canvasBackgroundColor, setCanvasBackgroundColor] = useState<string>('#FFFFFF'); // Default white
 
   const addElement = useCallback((type: ElementType) => {
     const newId = crypto.randomUUID();
@@ -60,10 +61,10 @@ export default function ThumbnailMakerLayout() {
       alt: 'Uploaded image',
       x: 10,
       y: 10,
-      width: 40, // Default width for uploaded images
-      height: 30, // Default height for uploaded images
+      width: 40, 
+      height: 30, 
       rotation: 0,
-      objectFit: 'contain', // Default to contain for uploaded images
+      objectFit: 'contain', 
     };
     setElements((prevElements) => [...prevElements, newElement]);
     setSelectedElementId(newId);
@@ -76,6 +77,13 @@ export default function ThumbnailMakerLayout() {
       )
     );
   }, []);
+
+  const deleteElement = useCallback((id: string) => {
+    setElements((prevElements) => prevElements.filter((el) => el.id !== id));
+    if (selectedElementId === id) {
+      setSelectedElementId(null);
+    }
+  }, [selectedElementId]);
 
   const selectElement = useCallback((id: string | null) => {
     setSelectedElementId(id);
@@ -92,16 +100,25 @@ export default function ThumbnailMakerLayout() {
         </div>
       </header>
       <main className="flex flex-1 overflow-hidden">
-        <ElementsSidebar addElement={addElement} onImageUpload={handleImageUpload} />
+        <ElementsSidebar 
+          addElement={addElement} 
+          onImageUpload={handleImageUpload}
+          setCanvasBackgroundColor={setCanvasBackgroundColor}
+          canvasBackgroundColor={canvasBackgroundColor}
+        />
         <CanvasArea
           elements={elements}
           selectedElementId={selectedElementId}
           selectElement={selectElement}
           updateElement={updateElement}
+          canvasBackgroundColor={canvasBackgroundColor}
         />
         <PropertiesSidebar
+          elements={elements}
           selectedElement={selectedElement}
           updateElement={updateElement}
+          deleteElement={deleteElement}
+          selectElement={selectElement}
         />
       </main>
     </div>
