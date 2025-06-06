@@ -10,7 +10,7 @@ import { Slider } from '@/components/ui/slider';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { LayersIcon, PaletteIcon, TypeIcon, ImagePlayIcon, Settings2Icon, RotateCcwIcon, Trash2Icon, CaseSensitiveIcon,PilcrowIcon, CombineIcon, UnderlineIcon, StrikethroughIcon, BoldIcon, ItalicIcon, CornerRadiusIcon } from 'lucide-react';
+import { LayersIcon, PaletteIcon, TypeIcon, ImagePlayIcon, Settings2Icon, RotateCcwIcon, Trash2Icon, CaseSensitiveIcon,PilcrowIcon, CombineIcon, UnderlineIcon, StrikethroughIcon, BoldIcon, ItalicIcon, Square, Palette, Copy as CopyIcon, ArrowLeftRight, ArrowUpDown, VenetianMask, ScanEye, Maximize2, Minus } from 'lucide-react';
 import type { CanvasElement, TextElement, ImageElement } from '@/types/canvas';
 
 interface PropertiesSidebarProps {
@@ -44,7 +44,7 @@ export function PropertiesSidebar({ elements, selectedElement, updateElement, de
 
   const handleInputChange = (property: keyof CanvasElement | keyof TextElement | keyof ImageElement, value: any) => {
     if (selectedElement) {
-        if (typeof value === 'string' && (property === 'letterSpacing' || property === 'lineHeight' || property === 'borderRadius')) {
+        if (typeof value === 'string' && (property === 'letterSpacing' || property === 'lineHeight' || property === 'borderRadius' || property === 'borderWidth' || property === 'shadowOffsetX' || property === 'shadowOffsetY' || property === 'shadowBlur' || property === 'shadowSpreadRadius')) {
             const numValue = parseFloat(value);
             updateElement(selectedElement.id, { [property]: isNaN(numValue) ? 0 : numValue });
         } else {
@@ -271,7 +271,44 @@ export function PropertiesSidebar({ elements, selectedElement, updateElement, de
           </SelectContent>
         </Select>
       </div>
-      <div className="space-y-1">
+
+      <div className="pt-2 space-y-1">
+        <h5 className="text-xs font-medium flex items-center gap-1 mb-1"><Square className="h-3 w-3 text-muted-foreground" /> Border</h5>
+        <Label htmlFor="border-width" className="text-xs">Width (px)</Label>
+        <Input id="border-width" type="number" value={element.borderWidth || 0} onChange={(e) => handleInputChange('borderWidth', e.target.value)} className="h-8 text-xs" min="0" />
+        <Slider value={[element.borderWidth || 0]} max={50} step={1} onValueChange={(value) => handleSliderChange('borderWidth', value)} className="mt-1" />
+        
+        <Label htmlFor="border-color" className="text-xs mt-2 flex items-center gap-1"><Palette className="h-3 w-3 text-muted-foreground" />Color</Label>
+        <Input id="border-color" type="color" value={element.borderColor || '#000000'} onChange={(e) => handleInputChange('borderColor', e.target.value)} className="h-8 p-1" />
+      </div>
+
+      <div className="pt-2 space-y-1">
+        <h5 className="text-xs font-medium flex items-center gap-1 mb-1"><CopyIcon className="h-3 w-3 text-muted-foreground" /> Shadow</h5>
+        <div className="grid grid-cols-2 gap-2">
+            <div>
+                <Label htmlFor="shadow-offset-x" className="text-xs">Offset X (px)</Label>
+                <Input id="shadow-offset-x" type="number" value={element.shadowOffsetX || 0} onChange={(e) => handleInputChange('shadowOffsetX', e.target.value)} className="h-8 text-xs" />
+                <Slider value={[element.shadowOffsetX || 0]} min={-50} max={50} step={1} onValueChange={(value) => handleSliderChange('shadowOffsetX', value)} className="mt-1" />
+            </div>
+            <div>
+                <Label htmlFor="shadow-offset-y" className="text-xs">Offset Y (px)</Label>
+                <Input id="shadow-offset-y" type="number" value={element.shadowOffsetY || 0} onChange={(e) => handleInputChange('shadowOffsetY', e.target.value)} className="h-8 text-xs" />
+                <Slider value={[element.shadowOffsetY || 0]} min={-50} max={50} step={1} onValueChange={(value) => handleSliderChange('shadowOffsetY', value)} className="mt-1" />
+            </div>
+        </div>
+        <Label htmlFor="shadow-blur" className="text-xs mt-2">Blur (px)</Label>
+        <Input id="shadow-blur" type="number" value={element.shadowBlur || 0} onChange={(e) => handleInputChange('shadowBlur', e.target.value)} className="h-8 text-xs" min="0" />
+        <Slider value={[element.shadowBlur || 0]} max={100} step={1} onValueChange={(value) => handleSliderChange('shadowBlur', value)} className="mt-1" />
+
+        <Label htmlFor="shadow-spread" className="text-xs mt-2">Spread (px)</Label>
+        <Input id="shadow-spread" type="number" value={element.shadowSpreadRadius || 0} onChange={(e) => handleInputChange('shadowSpreadRadius', e.target.value)} className="h-8 text-xs" />
+        <Slider value={[element.shadowSpreadRadius || 0]} min={0} max={50} step={1} onValueChange={(value) => handleSliderChange('shadowSpreadRadius', value)} className="mt-1" />
+
+        <Label htmlFor="shadow-color" className="text-xs mt-2 flex items-center gap-1"><Palette className="h-3 w-3 text-muted-foreground" />Color</Label>
+        <Input id="shadow-color" type="color" value={element.shadowColor || '#000000'} onChange={(e) => handleInputChange('shadowColor', e.target.value)} className="h-8 p-1" />
+      </div>
+      
+      <div className="pt-2 space-y-1">
         <Label htmlFor="border-radius" className="text-xs flex items-center gap-1">
           <CustomCornerRadiusIcon className="h-3 w-3" />Border Radius (px)
         </Label>
@@ -285,7 +322,7 @@ export function PropertiesSidebar({ elements, selectedElement, updateElement, de
         />
         <Slider
           value={[element.borderRadius || 0]}
-          max={100} // Max radius of 100px for now, can be adjusted
+          max={100} 
           step={1}
           onValueChange={(value) => handleSliderChange('borderRadius', value)}
           className="mt-1"
@@ -360,11 +397,10 @@ export function PropertiesSidebar({ elements, selectedElement, updateElement, de
           <LayersIcon className="h-5 w-5 text-primary" /> Layers
         </CardTitle>
       </CardHeader>
-      <ScrollArea className="flex-[0.5_1_auto] min-h-[150px]"> {/* Allow layers panel to grow a bit */}
+      <ScrollArea className="flex-[0.5_1_auto] min-h-[150px]"> 
         <CardContent className="p-4">
           {elements.length === 0 && <p className="text-sm text-muted-foreground text-center">No layers yet.</p>}
           <div className="space-y-2">
-            {/* Layers are rendered top-most first, so reverse for display */}
             {elements.slice().reverse().map((element) => (
               <div
                 key={element.id}
@@ -392,3 +428,4 @@ export function PropertiesSidebar({ elements, selectedElement, updateElement, de
     </Card>
   );
 }
+

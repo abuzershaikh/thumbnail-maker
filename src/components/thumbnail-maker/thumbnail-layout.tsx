@@ -49,6 +49,13 @@ export default function ThumbnailMakerLayout() {
         alt: 'Placeholder Image',
         objectFit: 'cover',
         borderRadius: 0,
+        borderWidth: 0,
+        borderColor: '#000000',
+        shadowOffsetX: 0,
+        shadowOffsetY: 0,
+        shadowBlur: 0,
+        shadowSpreadRadius: 0,
+        shadowColor: '#000000',
         'data-ai-hint': 'abstract background',
       } as ImageElement;
     } else {
@@ -73,6 +80,13 @@ export default function ThumbnailMakerLayout() {
       rotation: 0,
       objectFit: 'contain',
       borderRadius: 0,
+      borderWidth: 0,
+      borderColor: '#000000',
+      shadowOffsetX: 0,
+      shadowOffsetY: 0,
+      shadowBlur: 0,
+      shadowSpreadRadius: 0,
+      shadowColor: '#000000',
     };
     setElements((prevElements) => [...prevElements, newElement]);
     setSelectedElementId(newId);
@@ -132,3 +146,4 @@ export default function ThumbnailMakerLayout() {
     </div>
   );
 }
+

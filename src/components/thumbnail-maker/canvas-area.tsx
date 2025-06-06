@@ -154,7 +154,7 @@ export function CanvasArea({ elements, selectedElementId, selectElement, updateE
       width: `${element.width}%`,
       height: `${element.height}%`,
       transform: `rotate(${element.rotation}deg)`,
-      border: isSelected ? '2px dashed hsl(var(--primary))' : '1px solid transparent',
+      border: isSelected ? '2px dashed hsl(var(--primary))' : '1px solid transparent', // Default border for selection
       boxSizing: 'border-box',
       overflow: 'hidden',
     };
@@ -178,7 +178,7 @@ export function CanvasArea({ elements, selectedElementId, selectElement, updateE
         letterSpacing: `${textEl.letterSpacing}px`,
         lineHeight: textEl.lineHeight,
         display: 'flex',
-        alignItems: 'center', // Better vertical alignment for multi-line text
+        alignItems: 'center', 
         justifyContent: textEl.textAlign === 'left' ? 'flex-start' : textEl.textAlign === 'right' ? 'flex-end' : 'center',
         padding: '2px',
         whiteSpace: 'pre-wrap',
@@ -225,7 +225,18 @@ export function CanvasArea({ elements, selectedElementId, selectElement, updateE
          justifyContent: 'center',
          alignItems: 'center',
          borderRadius: imgEl.borderRadius ? `${imgEl.borderRadius}px` : '0px',
+         border: `${imgEl.borderWidth || 0}px solid ${imgEl.borderColor || 'transparent'}`,
+         boxShadow: `${imgEl.shadowOffsetX || 0}px ${imgEl.shadowOffsetY || 0}px ${imgEl.shadowBlur || 0}px ${imgEl.shadowSpreadRadius || 0}px ${imgEl.shadowColor || 'transparent'}`,
        };
+       if (isSelected && imageContainerStyle.border === '1px solid transparent') {
+        imageContainerStyle.border = '2px dashed hsl(var(--primary))'; // Ensure selection border is visible if no custom border
+       } else if (isSelected && imgEl.borderWidth && imgEl.borderWidth > 0) {
+        // If custom border exists, selection can be an outline or a thicker primary border
+        imageContainerStyle.outline = '2px dashed hsl(var(--primary))';
+        imageContainerStyle.outlineOffset = `${imgEl.borderWidth}px`;
+       }
+
+
       return (
         <div
           key={element.id}
@@ -242,7 +253,7 @@ export function CanvasArea({ elements, selectedElementId, selectElement, updateE
               height: '100%',
               objectFit: imgEl.objectFit,
               pointerEvents: 'none',
-              // borderRadius: imgEl.borderRadius ? `${imgEl.borderRadius}px` : '0px', // Apply to image if container overflow is not hidden
+              borderRadius: imgEl.borderRadius ? `${imgEl.borderRadius}px` : '0px', 
             }}
             draggable={false}
           />
@@ -301,3 +312,4 @@ export function CanvasArea({ elements, selectedElementId, selectElement, updateE
     </div>
   );
 }
+

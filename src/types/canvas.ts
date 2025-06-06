@@ -31,6 +31,14 @@ export interface ImageElement extends BaseElement {
   alt?: string;
   objectFit: 'cover' | 'contain' | 'fill' | 'none' | 'scale-down';
   borderRadius?: number; // in pixels
+  borderWidth?: number; // in px
+  borderColor?: string; // color hex
+  shadowOffsetX?: number; // in px
+  shadowOffsetY?: number; // in px
+  shadowBlur?: number; // in px
+  shadowSpreadRadius?: number; // in px
+  shadowColor?: string; // color hex
 }
 
 export type CanvasElement = TextElement | ImageElement;
+
