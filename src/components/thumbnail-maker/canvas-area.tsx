@@ -4,6 +4,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import type { CanvasElement, TextElement, ImageElement, ShapeElement, ElementType, ShapeType } from '@/types/canvas';
+import type { AddElementOptions } from '@/components/thumbnail-maker/thumbnail-layout'; // Assuming type export
 
 interface CanvasAreaProps {
   elements: CanvasElement[];
@@ -12,7 +13,7 @@ interface CanvasAreaProps {
   updateElement: (id: string, updates: Partial<CanvasElement>) => void;
   canvasBackgroundColor: string;
   canvasBackgroundImage: string | null;
-  addElement: (type: ElementType, shapeType?: ShapeType, options?: { x?: number; y?: number; width?: number; height?: number; }) => void;
+  addElement: (type: ElementType, shapeType?: ShapeType, options?: AddElementOptions) => void;
 }
 
 interface DraggingState {
@@ -28,12 +29,12 @@ interface DraggingState {
 
 const MIN_ELEMENT_SIZE_PERCENT = 5;
 
-export function CanvasArea({ 
-  elements, 
-  selectedElementId, 
-  selectElement, 
-  updateElement, 
-  canvasBackgroundColor, 
+export function CanvasArea({
+  elements,
+  selectedElementId,
+  selectElement,
+  updateElement,
+  canvasBackgroundColor,
   canvasBackgroundImage,
   addElement
 }: CanvasAreaProps) {
@@ -107,7 +108,7 @@ export function CanvasArea({
 
         newX = Math.max(0, Math.min(newX, 100 - currentElement.width));
         newY = Math.max(0, Math.min(newY, 100 - currentElement.height));
-        
+
         newX = isNaN(newX) ? draggingState.initialElementX : newX;
         newY = isNaN(newY) ? draggingState.initialElementY : newY;
 
@@ -122,7 +123,7 @@ export function CanvasArea({
 
         newWidth = Math.min(newWidth, 100 - currentElement.x);
         newHeight = Math.min(newHeight, 100 - currentElement.y);
-        
+
         newWidth = isNaN(newWidth) ? draggingState.initialElementWidth : newWidth;
         newHeight = isNaN(newHeight) ? draggingState.initialElementHeight : newHeight;
 
@@ -157,13 +158,13 @@ export function CanvasArea({
       const canvasDOMRect = canvasRef.current.getBoundingClientRect();
       const clickX = e.clientX - canvasDOMRect.left;
       const clickY = e.clientY - canvasDOMRect.top;
-  
+
       const xPercent = (clickX / canvasDOMRect.width) * 100;
       const yPercent = (clickY / canvasDOMRect.height) * 100;
-      
-      const textElementOptions = { 
-        x: xPercent, 
-        y: yPercent, 
+
+      const textElementOptions = {
+        x: xPercent,
+        y: yPercent,
         width: 25, // Default width for double-clicked text
         height: 8  // Default height for double-clicked text
       };
@@ -192,7 +193,7 @@ export function CanvasArea({
     const interactionStyle: React.CSSProperties = {
         cursor: isMovingThisElement ? 'grabbing' : (isResizingThisElement ? 'nwse-resize' : 'grab'),
     };
-    
+
     const resizeHandle = isSelected && (
       <div
         onMouseDown={(e) => handleResizeHandleMouseDown(e, element)}
@@ -231,7 +232,7 @@ export function CanvasArea({
           `${textEl.shadowOffsetX || 0}px ${textEl.shadowOffsetY || 0}px ${textEl.shadowBlur || 0}px ${textEl.shadowColor}`
           : 'none',
         display: 'flex',
-        alignItems: 'center', 
+        alignItems: 'center',
         justifyContent: textEl.textAlign === 'left' ? 'flex-start' : textEl.textAlign === 'right' ? 'flex-end' : 'center',
         padding: '2px',
         whiteSpace: 'pre-wrap',
@@ -261,13 +262,14 @@ export function CanvasArea({
          alignItems: 'center',
          borderRadius: imgEl.borderRadius ? `${imgEl.borderRadius}px` : '0px',
          border: `${imgEl.borderWidth || 0}px solid ${imgEl.borderColor || 'transparent'}`,
-         boxShadow: imgEl.shadowColor !== '#00000000' && (imgEl.shadowBlur || imgEl.shadowOffsetX || imgEl.shadowOffsetY || imgEl.shadowSpreadRadius) ? 
+         boxShadow: imgEl.shadowColor !== '#00000000' && (imgEl.shadowBlur || imgEl.shadowOffsetX || imgEl.shadowOffsetY || imgEl.shadowSpreadRadius) ?
            `${imgEl.shadowOffsetX || 0}px ${imgEl.shadowOffsetY || 0}px ${imgEl.shadowBlur || 0}px ${imgEl.shadowSpreadRadius || 0}px ${imgEl.shadowColor || 'transparent'}`
            : 'none',
+        filter: imgEl.filterBlur && imgEl.filterBlur > 0 ? `blur(${imgEl.filterBlur}px)` : 'none',
        };
-       if (isSelected && imageContainerStyle.border === '1px solid transparent') { 
+       if (isSelected && imageContainerStyle.border === '1px solid transparent') {
         imageContainerStyle.border = '2px dashed hsl(var(--primary))';
-       } else if (isSelected && imgEl.borderWidth && imgEl.borderWidth > 0) { 
+       } else if (isSelected && imgEl.borderWidth && imgEl.borderWidth > 0) {
         imageContainerStyle.outline = '2px dashed hsl(var(--primary))';
         imageContainerStyle.outlineOffset = `${imgEl.borderWidth}px`;
        }
@@ -288,7 +290,7 @@ export function CanvasArea({
               height: '100%',
               objectFit: imgEl.objectFit,
               pointerEvents: 'none',
-              borderRadius: imgEl.borderRadius ? `${imgEl.borderRadius}px` : '0px', 
+              borderRadius: imgEl.borderRadius ? `${imgEl.borderRadius}px` : '0px',
             }}
             draggable={false}
           />
@@ -308,8 +310,9 @@ export function CanvasArea({
         boxShadow: shapeEl.shadowColor !== '#00000000' && (shapeEl.shadowBlur || shapeEl.shadowOffsetX || shapeEl.shadowOffsetY || shapeEl.shadowSpreadRadius) ?
             `${shapeEl.shadowOffsetX || 0}px ${shapeEl.shadowOffsetY || 0}px ${shapeEl.shadowBlur || 0}px ${shapeEl.shadowSpreadRadius || 0}px ${shapeEl.shadowColor || 'transparent'}`
             : 'none',
+        filter: shapeEl.filterBlur && shapeEl.filterBlur > 0 ? `blur(${shapeEl.filterBlur}px)` : 'none',
       };
-       if (isSelected && shapeStyle.border === '1px solid transparent') { 
+       if (isSelected && shapeStyle.border === '1px solid transparent') {
         shapeStyle.border = '2px dashed hsl(var(--primary))';
        } else if (isSelected && shapeEl.strokeWidth && shapeEl.strokeWidth > 0) {
         shapeStyle.outline = '2px dashed hsl(var(--primary))';
@@ -321,7 +324,7 @@ export function CanvasArea({
           style={shapeStyle}
           onMouseDown={(e) => handleElementMouseDown(e, element)}
           onClick={(e) => e.stopPropagation()}
-          data-ai-hint="rectangle shape"
+          data-ai-hint={shapeEl['data-ai-hint'] === 'blur layer effect' ? 'blur layer' : 'rectangle shape'}
         >
           {resizeHandle}
         </div>
@@ -329,12 +332,12 @@ export function CanvasArea({
     }
     return null;
   };
-  
+
   const finalCanvasBackgroundColor = canvasBackgroundImage ? 'transparent' : canvasBackgroundColor;
 
   return (
-    <div 
-        className="flex-1 flex items-center justify-center p-6 bg-muted/40 overflow-auto" 
+    <div
+        className="flex-1 flex items-center justify-center p-6 bg-muted/40 overflow-auto"
         onClick={handleCanvasClick}
         onDoubleClick={handleCanvasDoubleClick}
     >
@@ -368,4 +371,3 @@ export function CanvasArea({
     </div>
   );
 }
-

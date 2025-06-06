@@ -10,10 +10,10 @@ import { Slider } from '@/components/ui/slider';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { 
-    LayersIcon, PaletteIcon, TypeIcon, ImagePlayIcon, Settings2Icon, RotateCcwIcon, Trash2Icon, 
-    CaseSensitiveIcon, PilcrowIcon, CombineIcon, UnderlineIcon, StrikethroughIcon, BoldIcon, 
-    ItalicIcon, Square as SquareIconLucide, Palette, Copy as CopyIcon, ChevronsUp, ChevronUp, ChevronDown, ChevronsDown, ShapesIcon
+import {
+    LayersIcon, PaletteIcon, TypeIcon, ImagePlayIcon, Settings2Icon, RotateCcwIcon, Trash2Icon,
+    CaseSensitiveIcon, PilcrowIcon, CombineIcon, UnderlineIcon, StrikethroughIcon, BoldIcon,
+    ItalicIcon, Square as SquareIconLucide, Palette, Copy as CopyIcon, ChevronsUp, ChevronUp, ChevronDown, ChevronsDown, ShapesIcon, DropletsIcon
 } from 'lucide-react';
 import type { CanvasElement, TextElement, ImageElement, ShapeElement } from '@/types/canvas';
 
@@ -64,14 +64,14 @@ const FONT_WEIGHTS = [
 ];
 
 
-export function PropertiesSidebar({ 
+export function PropertiesSidebar({
     elements, selectedElement, updateElement, deleteElement, selectElement,
     bringForward, sendBackward, bringToFront, sendToBack
 }: PropertiesSidebarProps) {
 
   const handleInputChange = (property: keyof CanvasElement | keyof TextElement | keyof ImageElement | keyof ShapeElement, value: any) => {
     if (selectedElement) {
-        if (typeof value === 'string' && (property === 'letterSpacing' || property === 'lineHeight' || property === 'borderRadius' || property === 'borderWidth' || property === 'shadowOffsetX' || property === 'shadowOffsetY' || property === 'shadowBlur' || property === 'shadowSpreadRadius' || property === 'strokeWidth' || property === 'cornerRadius')) {
+        if (typeof value === 'string' && (property === 'letterSpacing' || property === 'lineHeight' || property === 'borderRadius' || property === 'borderWidth' || property === 'shadowOffsetX' || property === 'shadowOffsetY' || property === 'shadowBlur' || property === 'shadowSpreadRadius' || property === 'strokeWidth' || property === 'cornerRadius' || property === 'filterBlur')) {
             const numValue = parseFloat(value);
             updateElement(selectedElement.id, { [property]: isNaN(numValue) ? 0 : numValue });
         } else {
@@ -85,19 +85,21 @@ export function PropertiesSidebar({
       updateElement(selectedElement.id, { [property]: value[0] });
     }
   };
-  
+
   const getLayerName = (element: CanvasElement): string => {
     if (element.type === 'text') {
       return `Text: ${(element as TextElement).content.substring(0, 20)}${(element as TextElement).content.length > 20 ? '...' : ''}`;
     }
     if (element.type === 'image') {
-      const src = (element as ImageElement).src;
-      if (src.startsWith('data:')) return 'Image: Uploaded';
-      if ((element as ImageElement)['data-ai-hint']) return `Image: ${(element as ImageElement)['data-ai-hint']}`;
-      return `Image: ${src.substring(src.lastIndexOf('/') + 1).substring(0,20)}...`;
+      const imgEl = element as ImageElement;
+      if (imgEl.src.startsWith('data:')) return 'Image: Uploaded';
+      if (imgEl['data-ai-hint']) return `Image: ${imgEl['data-ai-hint']}`;
+      return `Image: ${imgEl.src.substring(imgEl.src.lastIndexOf('/') + 1).substring(0,20)}...`;
     }
     if (element.type === 'shape') {
-        return `Shape: ${(element as ShapeElement).shapeType}`;
+        const shapeEl = element as ShapeElement;
+        if (shapeEl['data-ai-hint'] === 'blur layer effect') return 'Layer: Blur Effect';
+        return `Shape: ${shapeEl.shapeType}`;
     }
     return `Element: ${element.id.substring(0, 8)}`;
   };
@@ -285,7 +287,7 @@ export function PropertiesSidebar({
         <Label htmlFor="text-shadow-blur" className="text-xs mt-2">Blur (px)</Label>
         <Input id="text-shadow-blur" type="number" value={element.shadowBlur || 0} onChange={(e) => handleInputChange('shadowBlur', e.target.value)} className="h-8 text-xs" min="0" />
         <Slider value={[element.shadowBlur || 0]} max={30} step={1} onValueChange={(value) => handleSliderChange('shadowBlur', value)} className="mt-1" />
-        
+
         <Label htmlFor="text-shadow-color" className="text-xs mt-2 flex items-center gap-1"><Palette className="h-3 w-3 text-muted-foreground" />Color</Label>
         <Input id="text-shadow-color" type="color" value={element.shadowColor || '#00000000'} onChange={(e) => handleInputChange('shadowColor', e.target.value)} className="h-8 p-1" />
       </div>
@@ -340,7 +342,7 @@ export function PropertiesSidebar({
         <Label htmlFor="border-width" className="text-xs">Width (px)</Label>
         <Input id="border-width" type="number" value={element.borderWidth || 0} onChange={(e) => handleInputChange('borderWidth', e.target.value)} className="h-8 text-xs" min="0" />
         <Slider value={[element.borderWidth || 0]} max={50} step={1} onValueChange={(value) => handleSliderChange('borderWidth', value)} className="mt-1" />
-        
+
         <Label htmlFor="border-color" className="text-xs mt-2 flex items-center gap-1"><Palette className="h-3 w-3 text-muted-foreground" />Color</Label>
         <Input id="border-color" type="color" value={element.borderColor || '#000000'} onChange={(e) => handleInputChange('borderColor', e.target.value)} className="h-8 p-1" />
       </div>
@@ -370,7 +372,7 @@ export function PropertiesSidebar({
         <Label htmlFor="shadow-color" className="text-xs mt-2 flex items-center gap-1"><Palette className="h-3 w-3 text-muted-foreground" />Color</Label>
         <Input id="shadow-color" type="color" value={element.shadowColor || '#00000000'} onChange={(e) => handleInputChange('shadowColor', e.target.value)} className="h-8 p-1" />
       </div>
-      
+
       <div className="pt-2 space-y-1">
         <Label htmlFor="border-radius" className="text-xs flex items-center gap-1">
           <CustomCornerRadiusIcon className="h-3 w-3" />Border Radius (px)
@@ -385,11 +387,16 @@ export function PropertiesSidebar({
         />
         <Slider
           value={[element.borderRadius || 0]}
-          max={100} 
+          max={100}
           step={1}
           onValueChange={(value) => handleSliderChange('borderRadius', value)}
           className="mt-1"
         />
+      </div>
+      <div className="pt-2 space-y-1">
+        <Label htmlFor="image-filter-blur" className="text-xs flex items-center gap-1"><DropletsIcon className="h-3 w-3 text-muted-foreground" />Filter Blur (px)</Label>
+        <Input id="image-filter-blur" type="number" value={element.filterBlur || 0} onChange={(e) => handleInputChange('filterBlur', e.target.value)} className="h-8 text-xs" min="0" />
+        <Slider value={[element.filterBlur || 0]} max={50} step={1} onValueChange={(value) => handleSliderChange('filterBlur', value)} className="mt-1" />
       </div>
     </div>
   );
@@ -412,7 +419,7 @@ export function PropertiesSidebar({
         <Label htmlFor="shape-stroke-width" className="text-xs">Width (px)</Label>
         <Input id="shape-stroke-width" type="number" value={element.strokeWidth || 0} onChange={(e) => handleInputChange('strokeWidth', e.target.value)} className="h-8 text-xs" min="0" />
         <Slider value={[element.strokeWidth || 0]} max={50} step={1} onValueChange={(value) => handleSliderChange('strokeWidth', value)} className="mt-1" />
-        
+
         <Label htmlFor="shape-stroke-color" className="text-xs mt-2 flex items-center gap-1"><Palette className="h-3 w-3 text-muted-foreground" />Color</Label>
         <Input id="shape-stroke-color" type="color" value={element.strokeColor || '#000000'} onChange={(e) => handleInputChange('strokeColor', e.target.value)} className="h-8 p-1" />
       </div>
@@ -431,7 +438,7 @@ export function PropertiesSidebar({
           />
           <Slider
             value={[element.cornerRadius || 0]}
-            max={100} 
+            max={100}
             step={1}
             onValueChange={(value) => handleSliderChange('cornerRadius', value)}
             className="mt-1"
@@ -462,6 +469,11 @@ export function PropertiesSidebar({
 
         <Label htmlFor="shape-shadow-color" className="text-xs mt-2 flex items-center gap-1"><Palette className="h-3 w-3 text-muted-foreground" />Color</Label>
         <Input id="shape-shadow-color" type="color" value={element.shadowColor || '#00000000'} onChange={(e) => handleInputChange('shadowColor', e.target.value)} className="h-8 p-1" />
+      </div>
+      <div className="pt-2 space-y-1">
+        <Label htmlFor="shape-filter-blur" className="text-xs flex items-center gap-1"><DropletsIcon className="h-3 w-3 text-muted-foreground" />Filter Blur (px)</Label>
+        <Input id="shape-filter-blur" type="number" value={element.filterBlur || 0} onChange={(e) => handleInputChange('filterBlur', e.target.value)} className="h-8 text-xs" min="0" />
+        <Slider value={[element.filterBlur || 0]} max={50} step={1} onValueChange={(value) => handleSliderChange('filterBlur', value)} className="mt-1" />
       </div>
     </div>
   );
@@ -538,7 +550,7 @@ export function PropertiesSidebar({
           <LayersIcon className="h-5 w-5 text-primary" /> Layers
         </CardTitle>
       </CardHeader>
-      <ScrollArea className="flex-[0.5_1_auto] min-h-[150px]"> 
+      <ScrollArea className="flex-[0.5_1_auto] min-h-[150px]">
         <CardContent className="p-4">
           {elements.length === 0 && <p className="text-sm text-muted-foreground text-center">No layers yet.</p>}
           <div className="space-y-1">

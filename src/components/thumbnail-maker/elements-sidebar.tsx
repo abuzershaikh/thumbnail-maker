@@ -7,11 +7,12 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { TextIcon, ImageIcon, UploadCloudIcon, Palette, Square as SquareIcon, Trash2Icon } from 'lucide-react';
-import type { ElementType } from '@/types/canvas';
+import { TextIcon, ImageIcon, UploadCloudIcon, Palette, Square as SquareIcon, Trash2Icon, DropletsIcon } from 'lucide-react';
+import type { ElementType, ShapeType } from '@/types/canvas';
+import type { AddElementOptions } from '@/components/thumbnail-maker/thumbnail-layout'; // Assuming type export
 
 interface ElementsSidebarProps {
-  addElement: (type: ElementType, shapeType?: 'rectangle') => void;
+  addElement: (type: ElementType, shapeType?: ShapeType, options?: AddElementOptions) => void;
   onImageUpload: (dataUrl: string) => void;
   canvasBackgroundColor: string;
   setCanvasBackgroundColor: (color: string) => void;
@@ -20,8 +21,8 @@ interface ElementsSidebarProps {
 }
 
 const ElementButton = ({ label, icon: Icon, onClick, "data-ai-hint": dataAiHint }: { label: string; icon: React.ElementType, onClick: () => void, "data-ai-hint"?: string }) => (
-  <Button 
-    variant="outline" 
+  <Button
+    variant="outline"
     className="w-full justify-start p-4 h-auto text-left mb-2 shadow-sm hover:shadow-md transition-shadow"
     onClick={onClick}
     data-ai-hint={dataAiHint}
@@ -31,10 +32,10 @@ const ElementButton = ({ label, icon: Icon, onClick, "data-ai-hint": dataAiHint 
   </Button>
 );
 
-export function ElementsSidebar({ 
-  addElement, 
-  onImageUpload, 
-  canvasBackgroundColor, 
+export function ElementsSidebar({
+  addElement,
+  onImageUpload,
+  canvasBackgroundColor,
   setCanvasBackgroundColor,
   canvasBackgroundImage,
   setCanvasBackgroundImage
@@ -82,6 +83,19 @@ export function ElementsSidebar({
     }
   };
 
+  const handleAddBlurLayer = () => {
+    addElement('shape', 'rectangle', {
+      initialProps: {
+        fillColor: 'rgba(220, 220, 220, 0.4)', // Semi-transparent light gray
+        strokeWidth: 0,
+        filterBlur: 5, // Default blur amount
+        width: 30, // Default size for blur layer
+        height: 30,
+        'data-ai-hint': 'blur layer effect'
+      }
+    });
+  };
+
 
   return (
     <Card className="w-72 border-r-0 border-t-0 border-b-0 rounded-none shadow-none flex flex-col">
@@ -93,16 +107,17 @@ export function ElementsSidebar({
           <ElementButton label="Add Text" icon={TextIcon} onClick={() => addElement('text')} data-ai-hint="add text element button" />
           <ElementButton label="Add Image" icon={ImageIcon} onClick={() => addElement('image')} data-ai-hint="add placeholder image button" />
           <ElementButton label="Add Rectangle" icon={SquareIcon} onClick={() => addElement('shape', 'rectangle')} data-ai-hint="add rectangle shape button"/>
-          
-          <input 
-            type="file" 
-            ref={fileInputRef} 
-            onChange={handleFileChange} 
-            accept="image/*" 
-            className="hidden" 
+          <ElementButton label="Add Blur Layer" icon={DropletsIcon} onClick={handleAddBlurLayer} data-ai-hint="add blur layer button"/>
+
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileChange}
+            accept="image/*"
+            className="hidden"
           />
           <ElementButton label="Upload Image" icon={UploadCloudIcon} onClick={handleUploadClick} data-ai-hint="upload custom image button" />
-          
+
           <div>
             <h3 className="font-semibold mb-2 text-sm text-muted-foreground mt-4 flex items-center gap-2">
               <Palette className="h-4 w-4" /> Canvas Background
@@ -110,26 +125,26 @@ export function ElementsSidebar({
             <div className="space-y-1">
               <Label htmlFor="background-color" className="text-xs">Solid Color</Label>
               <div className="flex items-center gap-2 p-2 border rounded-md">
-                <Input 
-                  id="background-color" 
-                  type="color" 
+                <Input
+                  id="background-color"
+                  type="color"
                   value={canvasBackgroundColor}
                   onChange={(e) => setCanvasBackgroundColor(e.target.value)}
-                  className="h-8 w-10 p-1 border-none" 
+                  className="h-8 w-10 p-1 border-none"
                 />
                 <span className="text-xs font-mono">{canvasBackgroundColor.toUpperCase()}</span>
               </div>
             </div>
-            <input 
-                type="file" 
-                ref={bgFileInputRef} 
-                onChange={handleBgFileChange} 
-                accept="image/*" 
-                className="hidden" 
+            <input
+                type="file"
+                ref={bgFileInputRef}
+                onChange={handleBgFileChange}
+                accept="image/*"
+                className="hidden"
             />
-             <Button 
-                variant="outline" 
-                className="w-full justify-start p-4 h-auto text-left mt-3 mb-2 shadow-sm hover:shadow-md transition-shadow" 
+             <Button
+                variant="outline"
+                className="w-full justify-start p-4 h-auto text-left mt-3 mb-2 shadow-sm hover:shadow-md transition-shadow"
                 onClick={handleBgUploadClick}
                 data-ai-hint="upload background image button"
               >
@@ -137,9 +152,9 @@ export function ElementsSidebar({
               Upload Background Image
             </Button>
             {canvasBackgroundImage && (
-                 <Button 
-                    variant="outline" 
-                    className="w-full justify-start p-3 h-auto text-left text-xs shadow-sm hover:shadow-md transition-shadow hover:bg-destructive/10 hover:text-destructive" 
+                 <Button
+                    variant="outline"
+                    className="w-full justify-start p-3 h-auto text-left text-xs shadow-sm hover:shadow-md transition-shadow hover:bg-destructive/10 hover:text-destructive"
                     onClick={() => setCanvasBackgroundImage(null)}
                     data-ai-hint="remove background image button"
                 >

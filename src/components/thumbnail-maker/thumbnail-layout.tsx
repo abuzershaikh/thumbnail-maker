@@ -13,6 +13,7 @@ interface AddElementOptions {
   y?: number;
   width?: number;
   height?: number;
+  initialProps?: Partial<CanvasElement>;
 }
 
 export default function ThumbnailMakerLayout() {
@@ -22,12 +23,12 @@ export default function ThumbnailMakerLayout() {
   const [canvasBackgroundImage, setCanvasBackgroundImage] = useState<string | null>(null);
 
   const addElement = useCallback((
-    type: ElementType, 
+    type: ElementType,
     shapeType?: ShapeType,
     options?: AddElementOptions
   ) => {
     const newId = crypto.randomUUID();
-    
+
     let elementWidth: number;
     let elementHeight: number;
 
@@ -41,15 +42,15 @@ export default function ThumbnailMakerLayout() {
       elementWidth = options?.width ?? 40;
       elementHeight = options?.height ?? 30;
     }
-    
+
     let posX = options?.x ?? 10;
     let posY = options?.y ?? 10;
 
     if (options?.x !== undefined) {
-        posX = Math.max(0, Math.min(posX, 100 - elementWidth));
+      posX = Math.max(0, Math.min(posX, 100 - elementWidth));
     }
     if (options?.y !== undefined) {
-        posY = Math.max(0, Math.min(posY, 100 - elementHeight));
+      posY = Math.max(0, Math.min(posY, 100 - elementHeight));
     }
 
     const baseProps = {
@@ -59,20 +60,20 @@ export default function ThumbnailMakerLayout() {
       width: elementWidth,
       height: elementHeight,
       rotation: 0,
+      ...options?.initialProps
     };
 
     let newElement: CanvasElement;
 
     if (type === 'text') {
       newElement = {
-        ...baseProps,
         type: 'text',
         content: 'New Text',
         fontSize: 24,
         fontFamily: 'PT Sans',
         color: '#333333',
         textAlign: 'left',
-        fontWeight: '400', // Default to normal/400
+        fontWeight: '400',
         fontStyle: 'normal',
         textDecoration: 'none',
         letterSpacing: 0,
@@ -81,10 +82,10 @@ export default function ThumbnailMakerLayout() {
         shadowOffsetY: 0,
         shadowBlur: 0,
         shadowColor: '#00000000',
+        ...baseProps, // Spread baseProps here to allow override by initialProps
       } as TextElement;
     } else if (type === 'image') {
       newElement = {
-        ...baseProps,
         type: 'image',
         src: 'https://placehold.co/400x300.png',
         alt: 'Placeholder Image',
@@ -96,12 +97,13 @@ export default function ThumbnailMakerLayout() {
         shadowOffsetY: 0,
         shadowBlur: 0,
         shadowSpreadRadius: 0,
-        shadowColor: '#00000000', 
+        shadowColor: '#00000000',
         'data-ai-hint': 'abstract background',
+        filterBlur: 0,
+        ...baseProps,
       } as ImageElement;
     } else if (type === 'shape' && shapeType === 'rectangle') {
       newElement = {
-        ...baseProps,
         type: 'shape',
         shapeType: 'rectangle',
         fillColor: '#CCCCCC',
@@ -113,9 +115,11 @@ export default function ThumbnailMakerLayout() {
         shadowBlur: 0,
         shadowSpreadRadius: 0,
         shadowColor: '#00000000',
+        filterBlur: 0,
+        ...baseProps,
       } as ShapeElement;
     }
-     else {
+    else {
       return;
     }
 
@@ -144,6 +148,7 @@ export default function ThumbnailMakerLayout() {
       shadowBlur: 0,
       shadowSpreadRadius: 0,
       shadowColor: '#00000000',
+      filterBlur: 0,
     };
     setElements((prevElements) => [...prevElements, newElement]);
     setSelectedElementId(newId);
