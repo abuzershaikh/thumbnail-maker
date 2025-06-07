@@ -244,20 +244,16 @@ export default function ThumbnailMakerLayout() {
     }
 
     const currentSelectedId = selectedElementId;
-    setSelectedElementId(null);
+    setSelectedElementId(null); // Deselect to remove selection borders
 
-    await new Promise(resolve => setTimeout(resolve, 300));
-
+    // Give React time to re-render without selection
+    await new Promise(resolve => setTimeout(resolve, 50)); // Reverted timeout
 
     html2canvas(elementToCapture, {
         useCORS: true,
         logging: false,
-        scale: 2,
+        scale: 2, 
         backgroundColor: canvasBackgroundImage ? null : canvasBackgroundColor,
-        width: elementToCapture.scrollWidth,
-        height: elementToCapture.scrollHeight,
-        windowWidth: elementToCapture.scrollWidth,
-        windowHeight: elementToCapture.scrollHeight,
      }).then(canvas => {
       const image = canvas.toDataURL(`image/${format}`, format === 'jpeg' ? 0.9 : 1.0);
       const link = document.createElement('a');
