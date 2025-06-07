@@ -58,14 +58,14 @@ export default function ThumbnailMakerLayout() {
     }
 
 
-    const baseProps: Partial<CanvasElement> = { 
+    const baseProps: Partial<CanvasElement> = {
       id: newId,
       x: posX,
       y: posY,
       width: elementWidth,
       height: elementHeight,
       rotation: 0,
-      ...options?.initialProps 
+      ...options?.initialProps
     };
 
     let newElement: CanvasElement;
@@ -87,8 +87,8 @@ export default function ThumbnailMakerLayout() {
         shadowOffsetY: 0,
         shadowBlur: 0,
         shadowColor: '#00000000',
-        ...baseProps, 
-        ...options?.initialProps, 
+        ...baseProps,
+        ...options?.initialProps,
       } as TextElement;
     } else if (type === 'image') {
       newElement = {
@@ -128,7 +128,7 @@ export default function ThumbnailMakerLayout() {
       } as ShapeElement;
     }
     else {
-      return; 
+      return;
     }
 
     setElements((prevElements) => [...prevElements, newElement]);
@@ -245,17 +245,19 @@ export default function ThumbnailMakerLayout() {
 
     const currentSelectedId = selectedElementId;
     setSelectedElementId(null);
-    
+
     await new Promise(resolve => setTimeout(resolve, 300));
 
 
-    html2canvas(elementToCapture, { 
-        useCORS: true, 
+    html2canvas(elementToCapture, {
+        useCORS: true,
         logging: false,
-        scale: 2, 
+        scale: 2,
         backgroundColor: canvasBackgroundImage ? null : canvasBackgroundColor,
         width: elementToCapture.scrollWidth,
         height: elementToCapture.scrollHeight,
+        windowWidth: elementToCapture.scrollWidth,
+        windowHeight: elementToCapture.scrollHeight,
      }).then(canvas => {
       const image = canvas.toDataURL(`image/${format}`, format === 'jpeg' ? 0.9 : 1.0);
       const link = document.createElement('a');
