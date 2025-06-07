@@ -327,7 +327,7 @@ export function CanvasArea({
                 alignItems: 'center',
                 whiteSpace: 'pre-wrap',
                 wordBreak: 'break-word',
-                overflow: 'hidden', 
+                // overflow: 'hidden', // Removed this to potentially fix export clipping
               }}
             >
               {textEl.content || ""} 
@@ -462,3 +462,4 @@ export function CanvasArea({
     </div>
   );
 }
+
