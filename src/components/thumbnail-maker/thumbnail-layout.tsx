@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { ElementsSidebar } from '@/components/thumbnail-maker/elements-sidebar';
 import { CanvasArea } from '@/components/thumbnail-maker/canvas-area';
 import { PropertiesSidebar } from '@/components/thumbnail-maker/properties-sidebar';
@@ -50,8 +50,6 @@ export default function ThumbnailMakerLayout() {
     let posX = options?.x ?? 10;
     let posY = options?.y ?? 10;
 
-    // Ensure the element is placed within bounds if x, y are provided
-    // Adjust position based on element size if options.x/y would place part of it out of bounds
     if (options?.x !== undefined) {
         posX = Math.max(0, Math.min(options.x, 100 - elementWidth));
     }
@@ -130,7 +128,7 @@ export default function ThumbnailMakerLayout() {
       } as ShapeElement;
     }
     else {
-      return; // Should not happen with current UI
+      return; 
     }
 
     setElements((prevElements) => [...prevElements, newElement]);
@@ -178,6 +176,23 @@ export default function ThumbnailMakerLayout() {
       setSelectedElementId(null);
     }
   }, [selectedElementId]);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const targetNodeName = (event.target as HTMLElement)?.nodeName;
+      const isInputFocused = targetNodeName === 'INPUT' || targetNodeName === 'TEXTAREA';
+
+      if (selectedElementId && (event.key === 'Delete' || event.key === 'Backspace') && !isInputFocused) {
+        event.preventDefault(); // Prevent browser back navigation on Backspace
+        deleteElement(selectedElementId);
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [selectedElementId, deleteElement]);
 
   const selectElement = useCallback((id: string | null) => {
     setSelectedElementId(id);
@@ -231,7 +246,6 @@ export default function ThumbnailMakerLayout() {
     const currentSelectedId = selectedElementId;
     setSelectedElementId(null);
     
-    // Increased timeout for React to re-render without selection
     await new Promise(resolve => setTimeout(resolve, 300));
 
 
@@ -247,7 +261,7 @@ export default function ThumbnailMakerLayout() {
       const link = document.createElement('a');
       link.download = `thumbnail.${format}`;
       link.href = image;
-      document.body.appendChild(link); // Required for Firefox
+      document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
     }).catch(err => {
@@ -322,4 +336,3 @@ export default function ThumbnailMakerLayout() {
     </div>
   );
 }
-
