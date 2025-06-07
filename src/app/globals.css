@@ -5,7 +5,7 @@
 
 @layer base {
   :root {
-    --background: 120 40% 96%; /* Very light green #F2FAF2 */
+    --background: 130 50% 95%; /* Light Mint Green #EBF7F0 */
     --foreground: 120 25% 15%; /* Dark desaturated green #1D2B1D */
 
     --card: 0 0% 100%; /* White */
@@ -52,7 +52,7 @@
   }
 
   .dark {
-    --background: 140 10% 12%; /* Very dark desaturated green #1B211C */
+    --background: 140 25% 15%; /* Dark Forest Green #1D2B22 */
     --foreground: 140 15% 88%; /* Light slightly green-tinted gray #DCE4DD */
 
     --card: 140 10% 16%; /* Slightly lighter dark green for cards #232B25 */
