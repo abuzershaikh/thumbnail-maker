@@ -31,7 +31,7 @@ export default function ThumbnailMakerLayout() {
     shapeType?: ShapeType,
     options?: AddElementOptions
   ) => {
-    const newId = crypto.randomUUID();
+    const newId = (options?.initialProps as CanvasElement)?.id || crypto.randomUUID();
 
     let elementWidth: number;
     let elementHeight: number;
@@ -75,20 +75,19 @@ export default function ThumbnailMakerLayout() {
         type: 'text',
         content: 'New Text',
         fontSize: (options?.initialProps as TextElement)?.fontSize || 24,
-        fontFamily: 'PT Sans',
-        color: '#333333',
-        textAlign: 'left',
-        fontWeight: '400',
-        fontStyle: 'normal',
-        textDecoration: 'none',
-        letterSpacing: 0,
-        lineHeight: 1.2,
-        shadowOffsetX: 0,
-        shadowOffsetY: 0,
-        shadowBlur: 0,
-        shadowColor: '#00000000',
+        fontFamily: (options?.initialProps as TextElement)?.fontFamily || 'PT Sans',
+        color: (options?.initialProps as TextElement)?.color || '#333333',
+        textAlign: (options?.initialProps as TextElement)?.textAlign || 'left',
+        fontWeight: (options?.initialProps as TextElement)?.fontWeight || '400',
+        fontStyle: (options?.initialProps as TextElement)?.fontStyle || 'normal',
+        textDecoration: (options?.initialProps as TextElement)?.textDecoration || 'none',
+        letterSpacing: (options?.initialProps as TextElement)?.letterSpacing || 0,
+        lineHeight: (options?.initialProps as TextElement)?.lineHeight || 1.2,
+        shadowOffsetX: (options?.initialProps as TextElement)?.shadowOffsetX || 0,
+        shadowOffsetY: (options?.initialProps as TextElement)?.shadowOffsetY || 0,
+        shadowBlur: (options?.initialProps as TextElement)?.shadowBlur || 0,
+        shadowColor: (options?.initialProps as TextElement)?.shadowColor || '#00000000',
         ...baseProps,
-        ...options?.initialProps,
       } as TextElement;
     } else if (type === 'image') {
       newElement = {
@@ -107,7 +106,6 @@ export default function ThumbnailMakerLayout() {
         'data-ai-hint': 'abstract background',
         filterBlur: 0,
         ...baseProps,
-        ...options?.initialProps,
       } as ImageElement;
     } else if (type === 'shape' && shapeType === 'rectangle') {
       newElement = {
@@ -124,16 +122,67 @@ export default function ThumbnailMakerLayout() {
         shadowColor: '#00000000',
         filterBlur: 0,
         ...baseProps,
-        ...options?.initialProps,
       } as ShapeElement;
     }
     else {
-      return;
+      console.error("Attempted to add unknown element type or shapeType", type, shapeType);
+      return; 
     }
 
     setElements((prevElements) => [...prevElements, newElement]);
     setSelectedElementId(newId);
   }, []);
+
+  const handleAddPhoneMockup = useCallback(() => {
+    const mockupBaseX = 10;
+    const mockupBaseY = 10;
+    const mockupWidth = 25; // Percentage width for the mockup
+    const mockupHeight = 50; // Percentage height for the mockup
+
+    // Screen dimensions relative to mockup container
+    const screenXRatio = 0.07; // 7% padding from left of frame
+    const screenYRatio = 0.045; // 4.5% padding from top of frame
+    const screenWidthRatio = 0.86; // Screen is 86% of frame width
+    const screenHeightRatio = 0.91; // Screen is 91% of frame height
+
+    const screenElementId = crypto.randomUUID();
+
+    // Add Screen Element (added first, so it's behind the frame)
+    addElement('image', undefined, {
+      x: mockupBaseX + (mockupWidth * screenXRatio),
+      y: mockupBaseY + (mockupHeight * screenYRatio),
+      width: mockupWidth * screenWidthRatio,
+      height: mockupHeight * screenHeightRatio,
+      initialProps: {
+        id: screenElementId,
+        src: `https://placehold.co/280x580.png`,
+        alt: 'Phone Screen Content',
+        objectFit: 'cover',
+        'data-ai-hint': 'app interface',
+        borderRadius: 8, // Slightly rounded corners for the screen
+      }
+    });
+
+    // Add Frame Element
+    addElement('image', undefined, {
+      x: mockupBaseX,
+      y: mockupBaseY,
+      width: mockupWidth,
+      height: mockupHeight,
+      initialProps: {
+        src: `https://placehold.co/300x620.png`,
+        alt: 'Phone Frame',
+        objectFit: 'contain', // The frame image itself should be contained
+        'data-ai-hint': 'phone body modern',
+        borderRadius: 15, // Rounded corners for the phone body
+      }
+    });
+
+    // Explicitly select the screen element after both are added
+    setSelectedElementId(screenElementId);
+
+  }, [addElement, setSelectedElementId]);
+
 
   const handleImageUpload = useCallback((dataUrl: string) => {
     const newId = crypto.randomUUID();
@@ -183,7 +232,7 @@ export default function ThumbnailMakerLayout() {
       const isInputFocused = targetNodeName === 'INPUT' || targetNodeName === 'TEXTAREA';
 
       if (selectedElementId && (event.key === 'Delete' || event.key === 'Backspace') && !isInputFocused) {
-        event.preventDefault(); // Prevent browser back navigation on Backspace
+        event.preventDefault(); 
         deleteElement(selectedElementId);
       }
     };
@@ -244,10 +293,9 @@ export default function ThumbnailMakerLayout() {
     }
 
     const currentSelectedId = selectedElementId;
-    setSelectedElementId(null); // Deselect to remove selection borders
+    setSelectedElementId(null); 
 
-    // Give React time to re-render without selection
-    await new Promise(resolve => setTimeout(resolve, 50)); // Reverted timeout
+    await new Promise(resolve => setTimeout(resolve, 50)); 
 
     html2canvas(elementToCapture, {
         useCORS: true,
@@ -309,6 +357,7 @@ export default function ThumbnailMakerLayout() {
           canvasBackgroundColor={canvasBackgroundColor}
           setCanvasBackgroundImage={setCanvasBackgroundImage}
           canvasBackgroundImage={canvasBackgroundImage}
+          onAddPhoneMockup={handleAddPhoneMockup}
         />
         <CanvasArea
           elements={elements}
