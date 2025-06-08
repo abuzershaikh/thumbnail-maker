@@ -20,8 +20,55 @@ export interface AddElementOptions {
 
 const DEFAULT_BACKGROUND_COLOR = '#FFFFFF';
 
+const initialElements: CanvasElement[] = [
+  {
+    id: 'icon-placeholder',
+    type: 'image',
+    src: 'https://placehold.co/100x100.png?text=Icon',
+    alt: 'App Icon Placeholder',
+    x: 30,
+    y: 30,
+    width: 40,
+    height: 40,
+    rotation: 0,
+    objectFit: 'contain',
+    borderRadius: 0,
+    borderWidth: 0,
+    borderColor: '#000000',
+    shadowOffsetX: 0,
+    shadowOffsetY: 0,
+    shadowBlur: 0,
+    shadowSpreadRadius: 0,
+    shadowColor: '#00000000',
+    filterBlur: 0,
+  },
+  {
+    id: 'app-name-placeholder',
+    type: 'text',
+    content: 'App Name',
+    x: 5, // Adjusted x to be (100 - 90) / 2 for centering
+    y: 70, // Adjusted y position
+    width: 90, // Changed width
+    height: 15, // Changed height
+    rotation: 0,
+    fontSize: 20,
+    fontFamily: 'PT Sans',
+    color: '#333333',
+    textAlign: 'right',
+    fontWeight: 'bold',
+    fontStyle: 'normal',
+    textDecoration: 'none',
+    letterSpacing: 0,
+    lineHeight: 1.2,
+    shadowOffsetX: 0,
+    shadowOffsetY: 0,
+    shadowBlur: 0,
+    shadowColor: '#00000000',
+  }
+];
+
 export default function ThumbnailMakerLayout() {
-  const [elements, setElements] = useState<CanvasElement[]>([]);
+  const [elements, setElements] = useState<CanvasElement[]>(initialElements);
   const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
   const [canvasBackgroundColor, setCanvasBackgroundColor] = useState<string>(DEFAULT_BACKGROUND_COLOR);
   const [canvasBackgroundImage, setCanvasBackgroundImage] = useState<string | null>(null);
@@ -237,7 +284,7 @@ export default function ThumbnailMakerLayout() {
     });
   }, []);
 
-  const handleExport = useCallback(async (format: 'png' | 'jpeg') => {
+  const handleExport = useCallback(async (format: 'png' | 'jpeg', filename?: string) => {
     const elementToCapture = document.getElementById('exportable-canvas-container');
     if (!elementToCapture) {
       console.error('Canvas element not found for export.');
@@ -257,7 +304,7 @@ export default function ThumbnailMakerLayout() {
      }).then(canvas => {
       const image = canvas.toDataURL(`image/${format}`, format === 'jpeg' ? 0.9 : 1.0);
       const link = document.createElement('a');
-      link.download = `thumbnail.${format}`;
+      link.download = filename || `thumbnail.${format}`;
       link.href = image;
       document.body.appendChild(link);
       link.click();
@@ -273,11 +320,41 @@ export default function ThumbnailMakerLayout() {
 
 
   const handleClearCanvas = useCallback(() => {
-    setElements([]);
+    setElements(initialElements); // Reset to initial placeholders
     setSelectedElementId(null);
     setCanvasBackgroundColor(DEFAULT_BACKGROUND_COLOR);
     setCanvasBackgroundImage(null);
   }, []);
+
+  const generateThumbnails = useCallback(async (files: FileList | null) => {
+    if (!files) return;
+
+    for (const file of Array.from(files)) {
+      if (file.type !== 'image/png') {
+        console.warn(`Skipping non-PNG file: ${file.name}`);
+        continue;
+      }
+
+      let appName = file.name.replace(/\.png$/i, '');
+      appName = appName.charAt(0).toUpperCase() + appName.slice(1);
+
+      const reader = new FileReader();
+      const imageDataUrl = await new Promise<string>((resolve, reject) => {
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = (error) => reject(error);
+        reader.readAsDataURL(file);
+      });
+
+      updateElement('icon-placeholder', { src: imageDataUrl } as Partial<ImageElement>);
+      updateElement('app-name-placeholder', { content: appName } as Partial<TextElement>);
+
+      // Wait for UI to update
+      await new Promise(resolve => setTimeout(resolve, 200));
+
+      // Call handleExport
+      await handleExport('png', appName + '.png');
+    }
+  }, [updateElement, handleExport]); // Corrected dependencies for generateThumbnails
 
 
   const selectedElement = elements.find((el) => el.id === selectedElementId) || null;
@@ -309,6 +386,7 @@ export default function ThumbnailMakerLayout() {
           canvasBackgroundColor={canvasBackgroundColor}
           setCanvasBackgroundImage={setCanvasBackgroundImage}
           canvasBackgroundImage={canvasBackgroundImage}
+          generateThumbnails={generateThumbnails} // Pass generateThumbnails to ElementsSidebar
         />
         <CanvasArea
           elements={elements}

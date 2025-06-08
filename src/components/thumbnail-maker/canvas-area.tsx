@@ -246,7 +246,7 @@ export function CanvasArea({
       transform: `rotate(${element.rotation}deg)`,
       border: isSelected ? '2px dashed hsl(var(--primary))' : '1px solid transparent',
       boxSizing: 'border-box',
-      overflow: 'hidden',
+      overflow: element.type === 'text' ? 'visible' : 'hidden', // Conditional overflow
     };
 
     const interactionStyle: React.CSSProperties = {
@@ -327,7 +327,6 @@ export function CanvasArea({
                 alignItems: 'center',
                 whiteSpace: 'pre-wrap',
                 wordBreak: 'break-word',
-                // overflow: 'hidden', // Removed this to potentially fix export clipping
               }}
             >
               {textEl.content || ""} 

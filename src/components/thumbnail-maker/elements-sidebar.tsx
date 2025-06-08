@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -18,6 +18,7 @@ interface ElementsSidebarProps {
   setCanvasBackgroundColor: (color: string) => void;
   canvasBackgroundImage: string | null;
   setCanvasBackgroundImage: (url: string | null) => void;
+  generateThumbnails: (files: FileList | null) => Promise<void>;
 }
 
 const ElementButton = ({ label, icon: Icon, onClick, "data-ai-hint": dataAiHint }: { label: string; icon: React.ElementType, onClick: () => void, "data-ai-hint"?: string }) => (
@@ -39,9 +40,11 @@ export function ElementsSidebar({
   setCanvasBackgroundColor,
   canvasBackgroundImage,
   setCanvasBackgroundImage,
+  generateThumbnails,
 }: ElementsSidebarProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const bgFileInputRef = useRef<HTMLInputElement>(null);
+  const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
 
   const handleUploadClick = () => {
     fileInputRef.current?.click();
@@ -118,7 +121,28 @@ export function ElementsSidebar({
           />
           <ElementButton label="Upload Image" icon={UploadCloudIcon} onClick={handleUploadClick} data-ai-hint="upload custom image button" />
 
-          <div>
+          <div className="mt-4">
+            <Label htmlFor="bulk-image-upload" className="text-sm font-medium text-muted-foreground">Upload App Icons (PNG):</Label>
+            <Input
+              type="file"
+              id="bulk-image-upload"
+              multiple
+              accept="image/png"
+              className="mt-1 block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-violet-50 file:text-violet-700 hover:file:bg-violet-100"
+              onChange={(e) => setSelectedFiles(e.target.files)}
+            />
+            <Button
+              variant="default"
+              className="w-full mt-3 shadow-sm hover:shadow-md transition-shadow"
+              onClick={() => generateThumbnails(selectedFiles)}
+              disabled={!selectedFiles || selectedFiles.length === 0}
+              data-ai-hint="generate all thumbnails button"
+            >
+              Generate All Thumbnails
+            </Button>
+          </div>
+
+          <div className="mt-4">
             <h3 className="font-semibold mb-2 text-sm text-muted-foreground mt-4 flex items-center gap-2">
               <Palette className="h-4 w-4" /> Canvas Background
             </h3>
