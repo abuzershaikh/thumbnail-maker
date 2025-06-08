@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { TextIcon, ImageIcon, UploadCloudIcon, Palette, Square as SquareIcon, Trash2Icon, DropletsIcon, Smartphone } from 'lucide-react';
+import { TextIcon, ImageIcon, UploadCloudIcon, Palette, Square as SquareIcon, Trash2Icon, DropletsIcon } from 'lucide-react';
 import type { ElementType, ShapeType } from '@/types/canvas';
 import type { AddElementOptions } from '@/components/thumbnail-maker/thumbnail-layout';
 
@@ -18,7 +18,6 @@ interface ElementsSidebarProps {
   setCanvasBackgroundColor: (color: string) => void;
   canvasBackgroundImage: string | null;
   setCanvasBackgroundImage: (url: string | null) => void;
-  onAddPhoneMockup: () => void;
 }
 
 const ElementButton = ({ label, icon: Icon, onClick, "data-ai-hint": dataAiHint }: { label: string; icon: React.ElementType, onClick: () => void, "data-ai-hint"?: string }) => (
@@ -40,7 +39,6 @@ export function ElementsSidebar({
   setCanvasBackgroundColor,
   canvasBackgroundImage,
   setCanvasBackgroundImage,
-  onAddPhoneMockup
 }: ElementsSidebarProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const bgFileInputRef = useRef<HTMLInputElement>(null);
@@ -110,8 +108,7 @@ export function ElementsSidebar({
           <ElementButton label="Add Image" icon={ImageIcon} onClick={() => addElement('image')} data-ai-hint="add placeholder image button" />
           <ElementButton label="Add Rectangle" icon={SquareIcon} onClick={() => addElement('shape', 'rectangle')} data-ai-hint="add rectangle shape button"/>
           <ElementButton label="Add Blur Layer" icon={DropletsIcon} onClick={handleAddBlurLayer} data-ai-hint="add blur layer button"/>
-          <ElementButton label="Add Phone Mockup" icon={Smartphone} onClick={onAddPhoneMockup} data-ai-hint="add phone mockup button"/>
-
+          
           <input
             type="file"
             ref={fileInputRef}

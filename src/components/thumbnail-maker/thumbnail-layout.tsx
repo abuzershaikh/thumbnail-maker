@@ -133,56 +133,6 @@ export default function ThumbnailMakerLayout() {
     setSelectedElementId(newId);
   }, []);
 
-  const handleAddPhoneMockup = useCallback(() => {
-    const mockupBaseX = 10;
-    const mockupBaseY = 10;
-    const mockupWidth = 25; // Percentage width for the mockup
-    const mockupHeight = 50; // Percentage height for the mockup
-
-    // Screen dimensions relative to mockup container
-    const screenXRatio = 0.07; // 7% padding from left of frame
-    const screenYRatio = 0.045; // 4.5% padding from top of frame
-    const screenWidthRatio = 0.86; // Screen is 86% of frame width
-    const screenHeightRatio = 0.91; // Screen is 91% of frame height
-
-    const screenElementId = crypto.randomUUID();
-
-    // Add Screen Element (added first, so it's behind the frame)
-    addElement('image', undefined, {
-      x: mockupBaseX + (mockupWidth * screenXRatio),
-      y: mockupBaseY + (mockupHeight * screenYRatio),
-      width: mockupWidth * screenWidthRatio,
-      height: mockupHeight * screenHeightRatio,
-      initialProps: {
-        id: screenElementId,
-        src: `https://placehold.co/280x580.png`,
-        alt: 'Phone Screen Content',
-        objectFit: 'cover',
-        'data-ai-hint': 'app interface',
-        borderRadius: 8, // Slightly rounded corners for the screen
-      }
-    });
-
-    // Add Frame Element
-    addElement('image', undefined, {
-      x: mockupBaseX,
-      y: mockupBaseY,
-      width: mockupWidth,
-      height: mockupHeight,
-      initialProps: {
-        src: `https://placehold.co/300x620.png`,
-        alt: 'Phone Frame',
-        objectFit: 'contain', // The frame image itself should be contained
-        'data-ai-hint': 'phone body modern',
-        borderRadius: 15, // Rounded corners for the phone body
-      }
-    });
-
-    // Explicitly select the screen element after both are added
-    setSelectedElementId(screenElementId);
-
-  }, [addElement, setSelectedElementId]);
-
 
   const handleImageUpload = useCallback((dataUrl: string) => {
     const newId = crypto.randomUUID();
@@ -232,7 +182,9 @@ export default function ThumbnailMakerLayout() {
       const isInputFocused = targetNodeName === 'INPUT' || targetNodeName === 'TEXTAREA';
 
       if (selectedElementId && (event.key === 'Delete' || event.key === 'Backspace') && !isInputFocused) {
-        event.preventDefault(); 
+        if (event.key === 'Backspace') {
+          event.preventDefault(); 
+        }
         deleteElement(selectedElementId);
       }
     };
@@ -357,7 +309,6 @@ export default function ThumbnailMakerLayout() {
           canvasBackgroundColor={canvasBackgroundColor}
           setCanvasBackgroundImage={setCanvasBackgroundImage}
           canvasBackgroundImage={canvasBackgroundImage}
-          onAddPhoneMockup={handleAddPhoneMockup}
         />
         <CanvasArea
           elements={elements}
