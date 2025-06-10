@@ -1,13 +1,12 @@
 
 # YouTube Thumbnail Maker - Firebase Studio
 
-This is a Next.js application built in Firebase Studio that allows users to create custom YouTube thumbnails with an intuitive drag-and-drop interface. It supports saving and loading projects using Firebase Storage.
+This is a Next.js application built in Firebase Studio that allows users to create custom YouTube thumbnails with an intuitive drag-and-drop interface.
 
 ## Table of Contents
 
 - [Overview](#overview)
 - [Core Features](#core-features)
-- [Firebase Setup (Required for Save/Load)](#firebase-setup-required-for-saveload)
 - [Layout](#layout)
   - [Header](#header)
   - [Elements Sidebar](#elements-sidebar)
@@ -24,15 +23,13 @@ This is a Next.js application built in Firebase Studio that allows users to crea
   - [Layer Management](#layer-management)
   - [Canvas Customization](#canvas-customization)
   - [Exporting Thumbnails](#exporting-thumbnails)
-  - [Saving Projects to Firebase](#saving-projects-to-firebase)
-  - [Loading Projects from Firebase](#loading-projects-from-firebase)
   - [Keyboard Shortcuts](#keyboard-shortcuts)
   - [Bulk Thumbnail Generation](#bulk-thumbnail-generation)
 - [Tech Stack](#tech-stack)
 
 ## Overview
 
-The YouTube Thumbnail Maker provides a user-friendly interface to design compelling thumbnails for YouTube videos. Users can add text, images, and shapes, customize their properties, arrange them on a 16:9 canvas, export the final design as a PNG or JPG image, and save/load their work using Firebase Storage.
+The YouTube Thumbnail Maker provides a user-friendly interface to design compelling thumbnails for YouTube videos. Users can add text, images, and shapes, customize their properties, arrange them on a 16:9 canvas, and export the final design as a PNG or JPG image.
 
 ## Core Features
 
@@ -43,46 +40,9 @@ The YouTube Thumbnail Maker provides a user-friendly interface to design compell
 *   **Background Options**: Set solid color or image background for the canvas.
 *   **Real-time Preview**: See changes instantly on the canvas.
 *   **Export Options**: Save thumbnails as PNG or JPG.
-*   **Project Save/Load**: Save your work to Firebase Storage and load it back anytime.
 *   **Responsive Design**: Adapts to different screen sizes.
 *   **Light/Dark Theme**: Supports both light and dark color schemes.
 *   **Bulk Generation**: Quickly create multiple thumbnails based on uploaded app icons and names.
-
-## Firebase Setup (Required for Save/Load)
-
-To use the "Save Project" and "Load Project" features, you need to set up Firebase:
-
-1.  **Create a Firebase Project**: Go to the [Firebase Console](https://console.firebase.google.com/) and create a new project (or use an existing one).
-2.  **Enable Firebase Storage**: In your Firebase project, navigate to "Storage" and click "Get started". Follow the setup wizard. You might need to choose a location for your storage bucket.
-3.  **Configure Security Rules (Development)**: For initial development and testing, you can set your Storage security rules to allow public read/write. **IMPORTANT**: For a production application, you MUST configure more secure rules, typically involving user authentication. A simple rule for development could be:
-    ```
-    rules_version = '2';
-    service firebase.storage {
-      match /b/{bucket}/o {
-        match /{allPaths=**} {
-          allow read, write: if true; // Allows all users to read and write
-        }
-      }
-    }
-    ```
-    Apply this in `Firebase Console > Storage > Rules`.
-4.  **Get Firebase Configuration**:
-    *   In your Firebase project settings (click the gear icon next to "Project Overview"), find your web app's configuration.
-    *   Click on "Add app" and choose the web platform (</>) if you haven't already.
-    *   Register your app and Firebase will provide you with a `firebaseConfig` object.
-5.  **Update `.env` file**: Copy the configuration values into the `.env` file at the root of this project:
-    ```env
-    NEXT_PUBLIC_FIREBASE_API_KEY=YOUR_API_KEY
-    NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=YOUR_AUTH_DOMAIN
-    NEXT_PUBLIC_FIREBASE_PROJECT_ID=YOUR_PROJECT_ID
-    NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=YOUR_STORAGE_BUCKET
-    NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=YOUR_MESSAGING_SENDER_ID
-    NEXT_PUBLIC_FIREBASE_APP_ID=YOUR_APP_ID
-    ```
-    Replace `YOUR_...` with your actual Firebase project values.
-6.  **Restart your development server** for the environment variables to take effect.
-
-Without these steps, the "Save Project" and "Load Project" buttons will show an error message.
 
 ## Layout
 
@@ -92,8 +52,6 @@ The application is divided into several main sections:
 
 Located at the top, the header contains:
 *   **App Title**: "YouTube Thumbnail Maker" with a YouTube icon.
-*   **Save Project Button**: Opens a dialog to save the current canvas state (elements, background) to Firebase Storage under a user-defined project name.
-*   **Load Project Button**: Opens a dialog to load a previously saved project from Firebase Storage by entering its name.
 *   **Export PNG Button**: Exports the current canvas content as a PNG file.
 *   **Export JPG Button**: Exports the current canvas content as a JPG file.
 *   **Clear Canvas Button**: Clears all elements from the canvas, resets the background to default white, and removes any background image. Resets to the initial placeholder elements.
@@ -208,20 +166,6 @@ Located on the right side, this sidebar dynamically displays properties for the 
 *   Click "Export PNG" or "Export JPG" in the header.
 *   Images are downloaded at 2x resolution.
 
-### Saving Projects to Firebase
-
-*   Click the "Save Project" button in the header.
-*   A dialog will prompt for a project name.
-*   The current state of the canvas (all elements, background color, background image) is saved as a JSON file to `thumbnails/{projectName}.json` in your Firebase Storage bucket.
-*   **Note**: Requires Firebase to be set up correctly (see [Firebase Setup](#firebase-setup-required-for-saveload)).
-
-### Loading Projects from Firebase
-
-*   Click the "Load Project" button in the header.
-*   A dialog will prompt for the name of the project to load.
-*   The application fetches the corresponding JSON file from Firebase Storage and restores the canvas state.
-*   **Note**: Requires Firebase to be set up correctly.
-
 ### Keyboard Shortcuts
 
 *   **Delete/Backspace**: Deletes the currently selected element (if not actively editing text in an input field).
@@ -244,5 +188,7 @@ Located on the right side, this sidebar dynamically displays properties for the 
 *   **Tailwind CSS**: CSS framework.
 *   **Lucide React**: Icon library.
 *   **html2canvas**: For exporting canvas as image.
-*   **Firebase SDK (Storage)**: For saving and loading projects.
 *   **Genkit (for AI)**: Set up but not actively used for core thumbnail features.
+*   **Firebase SDK (Storage)**: (Note: Save/Load functionality using Firebase Storage has been removed in the current version, but the base Firebase library might still be present if other Firebase services are planned for future use).
+
+    

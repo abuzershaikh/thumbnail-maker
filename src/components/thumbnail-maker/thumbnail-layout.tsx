@@ -5,24 +5,12 @@ import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { ElementsSidebar } from '@/components/thumbnail-maker/elements-sidebar';
 import { CanvasArea } from '@/components/thumbnail-maker/canvas-area';
 import { PropertiesSidebar } from '@/components/thumbnail-maker/properties-sidebar';
-import { Youtube, Download, FileXIcon, SaveIcon, FolderOpenIcon } from 'lucide-react';
-import type { CanvasElement, ElementType, TextElement, ImageElement, ShapeElement, ShapeType, ProjectData } from '@/types/canvas';
+import { Youtube, Download, FileXIcon } from 'lucide-react';
+import type { CanvasElement, ElementType, TextElement, ImageElement, ShapeElement, ShapeType } from '@/types/canvas';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogFooter,
-  DialogTitle,
-  DialogDescription,
-  DialogClose,
-} from "@/components/ui/dialog";
+
 import { useToast } from "@/hooks/use-toast";
 import html2canvas from 'html2canvas';
-import { storage } from '@/lib/firebase'; // Firebase storage instance
-import { ref, uploadString, getDownloadURL } from "firebase/storage";
 
 
 export interface AddElementOptions {
@@ -56,6 +44,7 @@ const initialElements: CanvasElement[] = [
     shadowSpreadRadius: 0,
     shadowColor: '#00000000',
     filterBlur: 0,
+    'data-ai-hint': 'app icon'
   },
   {
     id: 'app-name-placeholder',
@@ -88,10 +77,6 @@ export default function ThumbnailMakerLayout() {
   const [canvasBackgroundColor, setCanvasBackgroundColor] = useState<string>(DEFAULT_BACKGROUND_COLOR);
   const [canvasBackgroundImage, setCanvasBackgroundImage] = useState<string | null>(null);
   const { toast } = useToast();
-
-  const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
-  const [isLoadDialogOpen, setIsLoadDialogOpen] = useState(false);
-  const [projectNameInput, setProjectNameInput] = useState('');
 
   const addElement = useCallback((
     type: ElementType,
@@ -317,7 +302,7 @@ export default function ThumbnailMakerLayout() {
     const currentSelectedId = selectedElementId;
     setSelectedElementId(null);
 
-    await new Promise(resolve => setTimeout(resolve, 50));
+    await new Promise(resolve => setTimeout(resolve, 50)); // Short delay for deselection to render
 
     try {
         const canvas = await html2canvas(elementToCapture, {
@@ -394,80 +379,6 @@ export default function ThumbnailMakerLayout() {
   }, [elements, updateElement, handleExport]);
 
 
-  const handleSaveProject = async () => {
-    if (!projectNameInput.trim()) {
-      toast({ title: "Error", description: "Project name cannot be empty.", variant: "destructive" });
-      return;
-    }
-    if (!storage) {
-       toast({ title: "Error", description: "Firebase Storage is not configured. Please check your .env file and Firebase setup.", variant: "destructive" });
-       return;
-    }
-
-    const projectData: ProjectData = {
-      elements,
-      canvasBackgroundColor,
-      canvasBackgroundImage,
-    };
-    const projectJSON = JSON.stringify(projectData);
-    const filePath = `thumbnails/${projectNameInput.trim()}.json`;
-    const fileRef = ref(storage, filePath);
-
-    try {
-      await uploadString(fileRef, projectJSON, 'raw', { contentType: 'application/json' });
-      toast({ title: "Success", description: `Project "${projectNameInput.trim()}" saved successfully!` });
-      setIsSaveDialogOpen(false);
-      setProjectNameInput('');
-    } catch (error) {
-      console.error("Error saving project:", error);
-      toast({ title: "Error Saving Project", description: (error as Error).message || "Could not save project.", variant: "destructive" });
-    }
-  };
-
-  const handleLoadProject = async () => {
-    if (!projectNameInput.trim()) {
-      toast({ title: "Error", description: "Project name cannot be empty.", variant: "destructive" });
-      return;
-    }
-     if (!storage) {
-       toast({ title: "Error", description: "Firebase Storage is not configured. Please check your .env file and Firebase setup.", variant: "destructive" });
-       return;
-    }
-
-    const filePath = `thumbnails/${projectNameInput.trim()}.json`;
-    const fileRef = ref(storage, filePath);
-
-    try {
-      const downloadURL = await getDownloadURL(fileRef);
-      const response = await fetch(downloadURL);
-      if (!response.ok) {
-        throw new Error(`Failed to fetch project: ${response.statusText}`);
-      }
-      const projectDataString = await response.text();
-      const projectData = JSON.parse(projectDataString) as ProjectData;
-
-      setElements(projectData.elements);
-      setCanvasBackgroundColor(projectData.canvasBackgroundColor);
-      setCanvasBackgroundImage(projectData.canvasBackgroundImage);
-      setSelectedElementId(null); // Deselect any currently selected element
-
-      toast({ title: "Success", description: `Project "${projectNameInput.trim()}" loaded successfully!` });
-      setIsLoadDialogOpen(false);
-      setProjectNameInput('');
-    } catch (error) {
-      console.error("Error loading project:", error);
-      const firebaseError = error as any;
-      let errorMessage = "Could not load project.";
-      if (firebaseError.code === 'storage/object-not-found') {
-        errorMessage = `Project "${projectNameInput.trim()}" not found.`;
-      } else if (firebaseError.message) {
-        errorMessage = firebaseError.message;
-      }
-      toast({ title: "Error Loading Project", description: errorMessage, variant: "destructive" });
-    }
-  };
-
-
   const selectedElement = elements.find((el) => el.id === selectedElementId) || null;
 
   return (
@@ -478,12 +389,6 @@ export default function ThumbnailMakerLayout() {
           <h1 className="text-xl font-semibold font-headline">YouTube Thumbnail Maker</h1>
         </div>
         <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={() => { setProjectNameInput(''); setIsSaveDialogOpen(true); }} data-ai-hint="save project button">
-                <SaveIcon className="mr-2 h-4 w-4" /> Save Project
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => { setProjectNameInput(''); setIsLoadDialogOpen(true); }} data-ai-hint="load project button">
-                <FolderOpenIcon className="mr-2 h-4 w-4" /> Load Project
-            </Button>
             <Button variant="outline" size="sm" onClick={() => handleExport('png')} data-ai-hint="save png button">
                 <Download className="mr-2 h-4 w-4" /> Export PNG
             </Button>
@@ -526,70 +431,8 @@ export default function ThumbnailMakerLayout() {
           sendToBack={sendToBack}
         />
       </main>
-
-      {/* Save Project Dialog */}
-      <Dialog open={isSaveDialogOpen} onOpenChange={setIsSaveDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Save Project</DialogTitle>
-            <DialogDescription>
-              Enter a name for your project. This will overwrite any existing project with the same name.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="projectNameSave" className="text-right">
-                Project Name
-              </Label>
-              <Input
-                id="projectNameSave"
-                value={projectNameInput}
-                onChange={(e) => setProjectNameInput(e.target.value)}
-                className="col-span-3"
-                placeholder="My Awesome Thumbnail"
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button type="button" variant="outline" onClick={() => setProjectNameInput('')}>Cancel</Button>
-            </DialogClose>
-            <Button type="button" onClick={handleSaveProject}>Save Project</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Load Project Dialog */}
-      <Dialog open={isLoadDialogOpen} onOpenChange={setIsLoadDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Load Project</DialogTitle>
-            <DialogDescription>
-              Enter the name of the project you want to load.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="projectNameLoad" className="text-right">
-                Project Name
-              </Label>
-              <Input
-                id="projectNameLoad"
-                value={projectNameInput}
-                onChange={(e) => setProjectNameInput(e.target.value)}
-                className="col-span-3"
-                placeholder="My Awesome Thumbnail"
-              />
-            </div>
-          </div>
-          <DialogFooter>
-             <DialogClose asChild>
-                <Button type="button" variant="outline" onClick={() => setProjectNameInput('')}>Cancel</Button>
-             </DialogClose>
-            <Button type="button" onClick={handleLoadProject}>Load Project</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
+
+    
