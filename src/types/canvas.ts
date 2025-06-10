@@ -65,3 +65,10 @@ export interface ShapeElement extends BaseElement {
 
 export type CanvasElement = TextElement | ImageElement | ShapeElement;
 
+export interface ProjectData {
+  elements: CanvasElement[];
+  canvasBackgroundColor: string;
+  canvasBackgroundImage: string | null;
+  // Potentially add app version or other metadata in the future
+  // version?: string; 
+}

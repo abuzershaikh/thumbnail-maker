@@ -5,10 +5,25 @@ import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { ElementsSidebar } from '@/components/thumbnail-maker/elements-sidebar';
 import { CanvasArea } from '@/components/thumbnail-maker/canvas-area';
 import { PropertiesSidebar } from '@/components/thumbnail-maker/properties-sidebar';
-import { Youtube, Download, FileXIcon } from 'lucide-react';
-import type { CanvasElement, ElementType, TextElement, ImageElement, ShapeElement, ShapeType } from '@/types/canvas';
+import { Youtube, Download, FileXIcon, SaveIcon, FolderOpenIcon } from 'lucide-react';
+import type { CanvasElement, ElementType, TextElement, ImageElement, ShapeElement, ShapeType, ProjectData } from '@/types/canvas';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogFooter,
+  DialogTitle,
+  DialogDescription,
+  DialogClose,
+} from "@/components/ui/dialog";
+import { useToast } from "@/hooks/use-toast";
 import html2canvas from 'html2canvas';
+import { storage } from '@/lib/firebase'; // Firebase storage instance
+import { ref as storageRef, uploadString, getString } from "firebase/storage";
+
 
 export interface AddElementOptions {
   x?: number;
@@ -46,10 +61,10 @@ const initialElements: CanvasElement[] = [
     id: 'app-name-placeholder',
     type: 'text',
     content: 'App Name',
-    x: 5, // Adjusted x to be (100 - 90) / 2 for centering
-    y: 70, // Adjusted y position
-    width: 90, // Changed width
-    height: 15, // Changed height
+    x: 5, 
+    y: 70, 
+    width: 90, 
+    height: 15, 
     rotation: 0,
     fontSize: 20,
     fontFamily: 'PT Sans',
@@ -72,6 +87,11 @@ export default function ThumbnailMakerLayout() {
   const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
   const [canvasBackgroundColor, setCanvasBackgroundColor] = useState<string>(DEFAULT_BACKGROUND_COLOR);
   const [canvasBackgroundImage, setCanvasBackgroundImage] = useState<string | null>(null);
+  const { toast } = useToast();
+
+  const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
+  const [isLoadDialogOpen, setIsLoadDialogOpen] = useState(false);
+  const [projectNameInput, setProjectNameInput] = useState('');
 
   const addElement = useCallback((
     type: ElementType,
@@ -79,7 +99,6 @@ export default function ThumbnailMakerLayout() {
     options?: AddElementOptions
   ) => {
     const newId = (options?.initialProps as CanvasElement)?.id || crypto.randomUUID();
-
     let elementWidth: number;
     let elementHeight: number;
 
@@ -89,7 +108,7 @@ export default function ThumbnailMakerLayout() {
     } else if (type === 'shape') {
       elementWidth = options?.width ?? 20;
       elementHeight = options?.height ?? 20;
-    } else { // image
+    } else { 
       elementWidth = options?.width ?? 40;
       elementHeight = options?.height ?? 30;
     }
@@ -103,7 +122,6 @@ export default function ThumbnailMakerLayout() {
     if (options?.y !== undefined) {
         posY = Math.max(0, Math.min(options.y, 100 - elementHeight));
     }
-
 
     const baseProps: Partial<CanvasElement> = {
       id: newId,
@@ -209,12 +227,12 @@ export default function ThumbnailMakerLayout() {
   }, []);
 
   const updateElement = useCallback((id: string, updates: Partial<CanvasElement>) => {
-    setElements((prevElements) =>
+    setElements((prevElements: CanvasElement[]) =>
       prevElements.map((el) =>
         el.id === id ? { ...el, ...updates } : el
       )
     );
-  }, []);
+  }, [setElements]);
 
   const deleteElement = useCallback((id: string) => {
     setElements((prevElements) => prevElements.filter((el) => el.id !== id));
@@ -268,19 +286,19 @@ export default function ThumbnailMakerLayout() {
 
   const bringToFront = useCallback((id: string) => {
     setElements(prevElements => {
-      const element = prevElements.find(el => el.id === id);
-      if (!element) return prevElements;
+      const elementToMove = prevElements.find(el => el.id === id);
+      if (!elementToMove) return prevElements;
       const newElements = prevElements.filter(el => el.id !== id);
-      return [...newElements, element];
+      return [...newElements, elementToMove];
     });
   }, []);
 
   const sendToBack = useCallback((id: string) => {
     setElements(prevElements => {
-      const element = prevElements.find(el => el.id === id);
-      if (!element) return prevElements;
+      const elementToMove = prevElements.find(el => el.id === id);
+      if (!elementToMove) return prevElements;
       const newElements = prevElements.filter(el => el.id !== id);
-      return [element, ...newElements];
+      return [elementToMove, ...newElements];
     });
   }, []);
 
@@ -311,16 +329,21 @@ export default function ThumbnailMakerLayout() {
       document.body.removeChild(link);
     }).catch(err => {
         console.error('Error exporting canvas:', err);
+         toast({
+            title: "Export Error",
+            description: "Could not export the thumbnail. See console for details.",
+            variant: "destructive",
+        });
     }).finally(() => {
         if (currentSelectedId) {
             setSelectedElementId(currentSelectedId);
         }
     });
-  }, [selectedElementId, canvasBackgroundColor, canvasBackgroundImage]);
+  }, [selectedElementId, canvasBackgroundColor, canvasBackgroundImage, toast]);
 
 
   const handleClearCanvas = useCallback(() => {
-    setElements(initialElements); // Reset to initial placeholders
+    setElements(initialElements);
     setSelectedElementId(null);
     setCanvasBackgroundColor(DEFAULT_BACKGROUND_COLOR);
     setCanvasBackgroundImage(null);
@@ -344,17 +367,94 @@ export default function ThumbnailMakerLayout() {
         reader.onerror = (error) => reject(error);
         reader.readAsDataURL(file);
       });
+      
+      const iconElement = elements.find(el => el.id === 'icon-placeholder');
+      const appNameElement = elements.find(el => el.id === 'app-name-placeholder');
 
-      updateElement('icon-placeholder', { src: imageDataUrl } as Partial<ImageElement>);
-      updateElement('app-name-placeholder', { content: appName } as Partial<TextElement>);
-
-      // Wait for UI to update
+      if (iconElement) {
+        updateElement('icon-placeholder', { src: imageDataUrl } as Partial<ImageElement>);
+      } else {
+        console.warn("Icon placeholder element not found for bulk generation.");
+      }
+      if (appNameElement) {
+         updateElement('app-name-placeholder', { content: appName } as Partial<TextElement>);
+      } else {
+         console.warn("App name placeholder element not found for bulk generation.");
+      }
+      
       await new Promise(resolve => setTimeout(resolve, 200));
-
-      // Call handleExport
       await handleExport('png', appName + '.png');
     }
-  }, [updateElement, handleExport]); // Corrected dependencies for generateThumbnails
+  }, [elements, updateElement, handleExport]); 
+
+
+  const handleSaveProject = async () => {
+    if (!projectNameInput.trim()) {
+      toast({ title: "Error", description: "Project name cannot be empty.", variant: "destructive" });
+      return;
+    }
+    if (!storage) {
+       toast({ title: "Error", description: "Firebase Storage is not configured. Please check your .env file and Firebase setup.", variant: "destructive" });
+       return;
+    }
+
+    const projectData: ProjectData = {
+      elements,
+      canvasBackgroundColor,
+      canvasBackgroundImage,
+    };
+    const projectJSON = JSON.stringify(projectData);
+    const filePath = `thumbnails/${projectNameInput.trim()}.json`;
+    const fileRef = storageRef(storage, filePath);
+
+    try {
+      await uploadString(fileRef, projectJSON, 'raw', { contentType: 'application/json' });
+      toast({ title: "Success", description: `Project "${projectNameInput.trim()}" saved successfully!` });
+      setIsSaveDialogOpen(false);
+      setProjectNameInput('');
+    } catch (error) {
+      console.error("Error saving project:", error);
+      toast({ title: "Error Saving Project", description: (error as Error).message || "Could not save project.", variant: "destructive" });
+    }
+  };
+
+  const handleLoadProject = async () => {
+    if (!projectNameInput.trim()) {
+      toast({ title: "Error", description: "Project name cannot be empty.", variant: "destructive" });
+      return;
+    }
+     if (!storage) {
+       toast({ title: "Error", description: "Firebase Storage is not configured. Please check your .env file and Firebase setup.", variant: "destructive" });
+       return;
+    }
+
+    const filePath = `thumbnails/${projectNameInput.trim()}.json`;
+    const fileRef = storageRef(storage, filePath);
+
+    try {
+      const projectJSON = await getString(fileRef);
+      const projectData = JSON.parse(projectJSON) as ProjectData;
+
+      setElements(projectData.elements);
+      setCanvasBackgroundColor(projectData.canvasBackgroundColor);
+      setCanvasBackgroundImage(projectData.canvasBackgroundImage);
+      setSelectedElementId(null); // Deselect any currently selected element
+
+      toast({ title: "Success", description: `Project "${projectNameInput.trim()}" loaded successfully!` });
+      setIsLoadDialogOpen(false);
+      setProjectNameInput('');
+    } catch (error) {
+      console.error("Error loading project:", error);
+      const firebaseError = error as any;
+      let errorMessage = "Could not load project.";
+      if (firebaseError.code === 'storage/object-not-found') {
+        errorMessage = `Project "${projectNameInput.trim()}" not found.`;
+      } else if (firebaseError.message) {
+        errorMessage = firebaseError.message;
+      }
+      toast({ title: "Error Loading Project", description: errorMessage, variant: "destructive" });
+    }
+  };
 
 
   const selectedElement = elements.find((el) => el.id === selectedElementId) || null;
@@ -367,11 +467,17 @@ export default function ThumbnailMakerLayout() {
           <h1 className="text-xl font-semibold font-headline">YouTube Thumbnail Maker</h1>
         </div>
         <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => { setProjectNameInput(''); setIsSaveDialogOpen(true); }} data-ai-hint="save project button">
+                <SaveIcon className="mr-2 h-4 w-4" /> Save Project
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => { setProjectNameInput(''); setIsLoadDialogOpen(true); }} data-ai-hint="load project button">
+                <FolderOpenIcon className="mr-2 h-4 w-4" /> Load Project
+            </Button>
             <Button variant="outline" size="sm" onClick={() => handleExport('png')} data-ai-hint="save png button">
-                <Download className="mr-2 h-4 w-4" /> Save as PNG
+                <Download className="mr-2 h-4 w-4" /> Export PNG
             </Button>
             <Button variant="outline" size="sm" onClick={() => handleExport('jpeg')} data-ai-hint="save jpg button">
-                <Download className="mr-2 h-4 w-4" /> Save as JPG
+                <Download className="mr-2 h-4 w-4" /> Export JPG
             </Button>
             <Button variant="destructive" size="sm" onClick={handleClearCanvas} data-ai-hint="clear canvas button">
                 <FileXIcon className="mr-2 h-4 w-4" /> Clear Canvas
@@ -386,7 +492,7 @@ export default function ThumbnailMakerLayout() {
           canvasBackgroundColor={canvasBackgroundColor}
           setCanvasBackgroundImage={setCanvasBackgroundImage}
           canvasBackgroundImage={canvasBackgroundImage}
-          generateThumbnails={generateThumbnails} // Pass generateThumbnails to ElementsSidebar
+          generateThumbnails={generateThumbnails}
         />
         <CanvasArea
           elements={elements}
@@ -409,6 +515,70 @@ export default function ThumbnailMakerLayout() {
           sendToBack={sendToBack}
         />
       </main>
+
+      {/* Save Project Dialog */}
+      <Dialog open={isSaveDialogOpen} onOpenChange={setIsSaveDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Save Project</DialogTitle>
+            <DialogDescription>
+              Enter a name for your project. This will overwrite any existing project with the same name.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="projectNameSave" className="text-right">
+                Project Name
+              </Label>
+              <Input
+                id="projectNameSave"
+                value={projectNameInput}
+                onChange={(e) => setProjectNameInput(e.target.value)}
+                className="col-span-3"
+                placeholder="My Awesome Thumbnail"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button type="button" variant="outline" onClick={() => setProjectNameInput('')}>Cancel</Button>
+            </DialogClose>
+            <Button type="button" onClick={handleSaveProject}>Save Project</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Load Project Dialog */}
+      <Dialog open={isLoadDialogOpen} onOpenChange={setIsLoadDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Load Project</DialogTitle>
+            <DialogDescription>
+              Enter the name of the project you want to load.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="projectNameLoad" className="text-right">
+                Project Name
+              </Label>
+              <Input
+                id="projectNameLoad"
+                value={projectNameInput}
+                onChange={(e) => setProjectNameInput(e.target.value)}
+                className="col-span-3"
+                placeholder="My Awesome Thumbnail"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+             <DialogClose asChild>
+                <Button type="button" variant="outline" onClick={() => setProjectNameInput('')}>Cancel</Button>
+             </DialogClose>
+            <Button type="button" onClick={handleLoadProject}>Load Project</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
