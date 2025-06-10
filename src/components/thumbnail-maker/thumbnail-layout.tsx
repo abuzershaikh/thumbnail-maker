@@ -22,7 +22,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import html2canvas from 'html2canvas';
 import { storage } from '@/lib/firebase'; // Firebase storage instance
-import { ref as storageRef, uploadString, getString } from "firebase/storage";
+import { ref, uploadString, getDownloadURL } from "firebase/storage";
 
 
 export interface AddElementOptions {
@@ -61,10 +61,10 @@ const initialElements: CanvasElement[] = [
     id: 'app-name-placeholder',
     type: 'text',
     content: 'App Name',
-    x: 5, 
-    y: 70, 
-    width: 90, 
-    height: 15, 
+    x: 5,
+    y: 70,
+    width: 90,
+    height: 15,
     rotation: 0,
     fontSize: 20,
     fontFamily: 'PT Sans',
@@ -108,7 +108,7 @@ export default function ThumbnailMakerLayout() {
     } else if (type === 'shape') {
       elementWidth = options?.width ?? 20;
       elementHeight = options?.height ?? 20;
-    } else { 
+    } else {
       elementWidth = options?.width ?? 40;
       elementHeight = options?.height ?? 30;
     }
@@ -191,7 +191,7 @@ export default function ThumbnailMakerLayout() {
     }
     else {
       console.error("Attempted to add unknown element type or shapeType", type, shapeType);
-      return; 
+      return;
     }
 
     setElements((prevElements) => [...prevElements, newElement]);
@@ -248,7 +248,7 @@ export default function ThumbnailMakerLayout() {
 
       if (selectedElementId && (event.key === 'Delete' || event.key === 'Backspace') && !isInputFocused) {
         if (event.key === 'Backspace') {
-          event.preventDefault(); 
+          event.preventDefault();
         }
         deleteElement(selectedElementId);
       }
@@ -306,39 +306,45 @@ export default function ThumbnailMakerLayout() {
     const elementToCapture = document.getElementById('exportable-canvas-container');
     if (!elementToCapture) {
       console.error('Canvas element not found for export.');
+      toast({
+            title: "Export Error",
+            description: "Canvas element not found for export.",
+            variant: "destructive",
+        });
       return;
     }
 
     const currentSelectedId = selectedElementId;
-    setSelectedElementId(null); 
+    setSelectedElementId(null);
 
-    await new Promise(resolve => setTimeout(resolve, 50)); 
+    await new Promise(resolve => setTimeout(resolve, 50));
 
-    html2canvas(elementToCapture, {
-        useCORS: true,
-        logging: false,
-        scale: 2, 
-        backgroundColor: canvasBackgroundImage ? null : canvasBackgroundColor,
-     }).then(canvas => {
-      const image = canvas.toDataURL(`image/${format}`, format === 'jpeg' ? 0.9 : 1.0);
-      const link = document.createElement('a');
-      link.download = filename || `thumbnail.${format}`;
-      link.href = image;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    }).catch(err => {
+    try {
+        const canvas = await html2canvas(elementToCapture, {
+            useCORS: true,
+            logging: false,
+            scale: 2,
+            backgroundColor: canvasBackgroundImage ? null : canvasBackgroundColor,
+        });
+        const image = canvas.toDataURL(`image/${format}`, format === 'jpeg' ? 0.9 : 1.0);
+        const link = document.createElement('a');
+        link.download = filename || `thumbnail.${format}`;
+        link.href = image;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    } catch (err) {
         console.error('Error exporting canvas:', err);
          toast({
             title: "Export Error",
             description: "Could not export the thumbnail. See console for details.",
             variant: "destructive",
         });
-    }).finally(() => {
+    } finally {
         if (currentSelectedId) {
             setSelectedElementId(currentSelectedId);
         }
-    });
+    }
   }, [selectedElementId, canvasBackgroundColor, canvasBackgroundImage, toast]);
 
 
@@ -367,7 +373,7 @@ export default function ThumbnailMakerLayout() {
         reader.onerror = (error) => reject(error);
         reader.readAsDataURL(file);
       });
-      
+
       const iconElement = elements.find(el => el.id === 'icon-placeholder');
       const appNameElement = elements.find(el => el.id === 'app-name-placeholder');
 
@@ -381,11 +387,11 @@ export default function ThumbnailMakerLayout() {
       } else {
          console.warn("App name placeholder element not found for bulk generation.");
       }
-      
+
       await new Promise(resolve => setTimeout(resolve, 200));
       await handleExport('png', appName + '.png');
     }
-  }, [elements, updateElement, handleExport]); 
+  }, [elements, updateElement, handleExport]);
 
 
   const handleSaveProject = async () => {
@@ -405,7 +411,7 @@ export default function ThumbnailMakerLayout() {
     };
     const projectJSON = JSON.stringify(projectData);
     const filePath = `thumbnails/${projectNameInput.trim()}.json`;
-    const fileRef = storageRef(storage, filePath);
+    const fileRef = ref(storage, filePath);
 
     try {
       await uploadString(fileRef, projectJSON, 'raw', { contentType: 'application/json' });
@@ -429,11 +435,16 @@ export default function ThumbnailMakerLayout() {
     }
 
     const filePath = `thumbnails/${projectNameInput.trim()}.json`;
-    const fileRef = storageRef(storage, filePath);
+    const fileRef = ref(storage, filePath);
 
     try {
-      const projectJSON = await getString(fileRef);
-      const projectData = JSON.parse(projectJSON) as ProjectData;
+      const downloadURL = await getDownloadURL(fileRef);
+      const response = await fetch(downloadURL);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch project: ${response.statusText}`);
+      }
+      const projectDataString = await response.text();
+      const projectData = JSON.parse(projectDataString) as ProjectData;
 
       setElements(projectData.elements);
       setCanvasBackgroundColor(projectData.canvasBackgroundColor);
